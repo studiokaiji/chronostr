@@ -1,0 +1,12 @@
+version: "3"
+services:
+  strfry:
+    image: pluja/strfry:latest
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ./strfry.conf
+        target: /etc/strfry.conf
+      - ./strfry-db:/app/strfry-db
+    ports:
+      - "7777:7777"
