@@ -6,8 +6,9 @@ import { Label } from "./ui/label";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Textarea } from "./ui/textarea";
-import { useAlert } from "@/hooks/useAlert";
+import { useAlert } from "@/hooks/use-alert";
 import { Spinner } from "./ui/spinner";
+import { createEventCalendar } from "@/services/event-calender";
 
 export const CreateNewEvent = () => {
   const [title, setTitle] = useState("");
@@ -28,32 +29,46 @@ export const CreateNewEvent = () => {
 
   const [isCreating, setIsCreating] = useState(false);
 
-  const submit: FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault();
+  const submit: FormEventHandler<HTMLFormElement> = async (e) => {
+    try {
+      e.preventDefault();
 
-    setIsCreating(true);
+      setIsCreating(true);
 
-    const strDates = dateString.split("\n");
-    const dates: EventDate[] = [];
+      const strDates = dateString.split("\n");
+      const dates: EventDate[] = [];
 
-    for (const strDate of strDates) {
-      const parsed = safeParseISO8601String(strDate);
-      if (!parsed) {
-        setAlert({
-          title: "An invalid date was found.",
-          description: `"${strDate}" is not in accordance with ISO8601.`,
-          variant: "destructive",
+      for (const strDate of strDates) {
+        const parsed = safeParseISO8601String(strDate);
+        if (!parsed) {
+          setAlert({
+            title: "An invalid date was found.",
+            description: `"${strDate}" is not in accordance with ISO8601.`,
+            variant: "destructive",
+          });
+          setIsCreating(false);
+          return;
+        }
+        dates.push({
+          date: parsed,
+          includeTime: strDate.includes("T"),
         });
-        setIsCreating(false);
-        break;
       }
-      dates.push({
-        date: parsed,
-        includeTime: strDate.includes("T"),
-      });
-    }
 
-    setIsCreating(false);
+      await createEventCalendar({
+        title,
+        description,
+        dates,
+      });
+    } catch (e) {
+      setAlert({
+        title: "Error",
+        description: String(e),
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (

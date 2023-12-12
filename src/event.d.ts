@@ -6,5 +6,7 @@ type EventDate = {
 type EventInput = {
   title: string;
   description?: string;
+  location?: string;
+  geohash?: string;
   dates: EventDate[];
 };
