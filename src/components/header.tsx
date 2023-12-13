@@ -3,8 +3,8 @@ import { Button } from "./ui/button";
 
 export const Header = () => {
   return (
-    <div className="w-full p-4 bg-slate-50 bg-opacity-50 backdrop-blur-lg">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <div className="w-full max-w-7xl mx-auto p-4 bg-slate-50 bg-opacity-50 backdrop-blur-lg">
+      <div className="mx-auto flex items-center justify-between">
         <Link to="/">
           <div className="font-bold select-none">chronostr</div>
         </Link>
