@@ -1,12 +1,23 @@
-type EventDate = {
+import { type NDKEvent } from "@nostr-dev-kit/ndk";
+
+type EventDateInput = {
   date: Date;
   includeTime: boolean;
 };
 
-type EventInput = {
+type EventDate = EventDateInput & {
+  id: string;
+  event: NDKEvent;
+};
+
+type EventCalenderInput = {
   title: string;
   description?: string;
-  location?: string;
-  geohash?: string;
+  dates: EventDateInput[];
+};
+
+type EventCalender = Omit<EventCalenderInput, "dates"> & {
+  event: NDKEvent;
+  id: string;
   dates: EventDate[];
 };

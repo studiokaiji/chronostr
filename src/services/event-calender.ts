@@ -3,16 +3,12 @@ import {
   DRAFT_DATE_BASED_CALENDAR_EVENT_KIND,
   DRAFT_TIME_BASED_CALENDAR_EVENT_KIND,
 } from "@/consts";
+import { EventCalender, EventCalenderInput, EventDate } from "@/event";
 import { getNDK } from "@/ndk";
-import { NDKEvent } from "@nostr-dev-kit/ndk";
+import { NDKEvent, NDKFilter } from "@nostr-dev-kit/ndk";
 
-export const createEventCalendar = async (input: EventInput) => {
+export const createEventCalendar = async (input: EventCalenderInput) => {
   const ndk = await getNDK();
-
-  const user = ndk.getUser({
-    pubkey: "2d417bce8c10883803bc427703e3c4c024465c88e7063ed68f9dfeecf56911ac",
-  });
-  console.log(await user.fetchProfile());
 
   // Create Draft Date/Time Calendar Events
   const candidateDateEvents = await Promise.all(
@@ -31,13 +27,6 @@ export const createEventCalendar = async (input: EventInput) => {
         ? String(Math.floor(date.date.getTime() / 1000))
         : date.date.toISOString();
       tags.push(["start", start]);
-
-      if (input.location) {
-        tags.push(["location", input.location]);
-      }
-      if (input.geohash) {
-        tags.push(["geohash", input.geohash]);
-      }
 
       const content = input.description || "";
 
@@ -61,14 +50,17 @@ export const createEventCalendar = async (input: EventInput) => {
     if (!dTag) {
       throw Error("Invalid event");
     }
-    return ["a", `${ev.kind}:${ev.pubkey}:${dTag}`];
+    return ["a", `${ev.kind}:${ev.pubkey}:${dTag[1]}`];
   });
 
-  draftCalendarEvent.tags = [["d", crypto.randomUUID()], ...aTags];
+  draftCalendarEvent.tags = [
+    ["d", crypto.randomUUID()],
+    ["title", input.title],
+    ...aTags,
+  ];
+  draftCalendarEvent.content = input.description || "";
 
   await draftCalendarEvent.sign();
-
-  console.log(draftCalendarEvent.rawEvent());
 
   // Publish all
   await Promise.all([
@@ -77,4 +69,61 @@ export const createEventCalendar = async (input: EventInput) => {
   ]);
 
   return draftCalendarEvent;
+};
+
+export const getEventCalendar = async (naddr: string) => {
+  const ndk = await getNDK();
+
+  const calendarEvent = await ndk.fetchEvent(naddr);
+  if (!calendarEvent) {
+    return null;
+  }
+
+  const aTags = calendarEvent.getMatchingTags("a");
+  const filters: NDKFilter[] = [];
+
+  for (const tag of aTags) {
+    const splitted = tag[1].split(":");
+    if (splitted.length < 3) {
+      continue;
+    }
+
+    const [kind, pubkey, identifier] = splitted;
+    filters.push({
+      kinds: [Number(kind)],
+      authors: [pubkey],
+      "#d": [identifier],
+    });
+  }
+
+  const dateEvents = await ndk.fetchEvents(filters);
+  const dates: EventDate[] = [];
+
+  for (const ev of dateEvents) {
+    const start = ev.tagValue("start");
+    if (!start) continue;
+
+    const includeTime = !Number.isNaN(Number(start));
+    const date = new Date(start);
+    if (!date || Number.isNaN(date.getTime())) {
+      continue;
+    }
+
+    const eventDate: EventDate = {
+      date,
+      includeTime,
+      id: ev.id,
+      event: ev,
+    };
+    dates.push(eventDate);
+  }
+  const calendar: EventCalender = {
+    title: calendarEvent.tagValue("title") || "",
+    description: calendarEvent.content,
+    dates,
+    event: calendarEvent,
+    id: calendarEvent.tagId(),
+  };
+
+  return calendar;
 };
