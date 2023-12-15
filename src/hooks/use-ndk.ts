@@ -15,8 +15,6 @@ export const useNDK = () => {
   const connectToNip07 = async () => {
     setIsLoading(true);
 
-    console.log("hiii");
-
     const signer = new NDKNip07Signer();
     if (!(await signer.blockUntilReady())) {
       throw Error("Signer is not ready.");
