@@ -1,21 +1,30 @@
-import NDK, { NDKNip07Signer } from "@nostr-dev-kit/ndk";
+import NDK, { NDKNip07Signer, NDKSigner } from "@nostr-dev-kit/ndk";
 import { getRelays } from "./services/relays";
-
-const nip07signer = new NDKNip07Signer();
+import { AppLocalStorage } from "./services/app-local-storage";
 
 let _ndk: NDK;
 
-export const getNDK = async () => {
-  if (_ndk) {
+export const getNDK = async (signer?: NDKSigner) => {
+  if (_ndk && !signer) {
     return _ndk;
   }
 
+  const appStorage = new AppLocalStorage();
+
+  if (appStorage.getItem("connected")) {
+    signer = new NDKNip07Signer();
+  }
+
   const ndk = new NDK({
-    signer: nip07signer,
     explicitRelayUrls: getRelays(),
+    signer,
   });
   await ndk.connect();
   _ndk = ndk;
+
+  if (signer) {
+    appStorage.setItem("connected", String(true));
+  }
 
   return _ndk;
 };
