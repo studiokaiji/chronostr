@@ -9,6 +9,9 @@ import { Textarea } from "./ui/textarea";
 import { useAlert } from "@/hooks/use-alert";
 import { Spinner } from "./ui/spinner";
 import { createEventCalendar } from "@/services/event-calender";
+import { useNavigate } from "react-router-dom";
+import { EventDateInput } from "@/event";
+import { useNDK } from "@/hooks/use-ndk";
 
 export const CreateNewEvent = () => {
   const [title, setTitle] = useState("");
@@ -27,16 +30,24 @@ export const CreateNewEvent = () => {
     setDateString((str) => `${str ? `${str}\n` : ""}${converted}`);
   };
 
+  const navigate = useNavigate();
+
+  const { ndk } = useNDK();
+
   const [isCreating, setIsCreating] = useState(false);
 
   const submit: FormEventHandler<HTMLFormElement> = async (e) => {
     try {
       e.preventDefault();
 
+      if (!ndk) {
+        return;
+      }
+
       setIsCreating(true);
 
       const strDates = dateString.split("\n");
-      const dates: EventDate[] = [];
+      const dates: EventDateInput[] = [];
 
       for (const strDate of strDates) {
         const parsed = safeParseISO8601String(strDate);
@@ -51,14 +62,22 @@ export const CreateNewEvent = () => {
         }
         dates.push({
           date: parsed,
-          includeTime: strDate.includes("T"),
+          includeTime: strDate.includes(":"),
         });
       }
 
-      await createEventCalendar({
+      const ev = await createEventCalendar(ndk, {
         title,
         description,
         dates,
+      });
+
+      const encoded = ev.encode();
+
+      navigate(`/events/${encoded}`);
+      setAlert({
+        title: "Event created!",
+        variant: "default",
       });
     } catch (e) {
       setAlert({
