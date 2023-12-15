@@ -6,32 +6,35 @@ import { EventCalendarPage } from "./pages/events/[naddr]";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Spinner } from "./components/ui/spinner";
+import { NDKContextProvider } from "./contexts/ndk-context";
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AlertContextProvider>
-        <Suspense
-          fallback={
-            <div className="flex w-screen h-screen items-center justify-center">
-              <Spinner className="w-7 h-7 border-primary" />
-            </div>
-          }
-        >
-          <HashRouter>
-            <Routes>
-              <Route path="/" element={<Container />}>
-                <Route index element={<IndexPage />} />
-                <Route path="events">
-                  <Route path=":naddr" element={<EventCalendarPage />} />
+      <NDKContextProvider>
+        <AlertContextProvider>
+          <Suspense
+            fallback={
+              <div className="flex w-screen h-screen items-center justify-center">
+                <Spinner className="w-7 h-7 border-primary" />
+              </div>
+            }
+          >
+            <HashRouter>
+              <Routes>
+                <Route path="/" element={<Container />}>
+                  <Route index element={<IndexPage />} />
+                  <Route path="events">
+                    <Route path=":naddr" element={<EventCalendarPage />} />
+                  </Route>
                 </Route>
-              </Route>
-            </Routes>
-          </HashRouter>
-        </Suspense>
-      </AlertContextProvider>
+              </Routes>
+            </HashRouter>
+          </Suspense>
+        </AlertContextProvider>
+      </NDKContextProvider>
     </QueryClientProvider>
   );
 }
