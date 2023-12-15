@@ -1,17 +1,18 @@
 import { useAlert } from "@/hooks/use-alert";
-import { getNDK } from "@/ndk";
-import { NDKNip07Signer } from "@nostr-dev-kit/ndk";
 import { useCallback } from "react";
 import { Button, ButtonProps } from "./ui/button";
+import { useNDK } from "@/hooks/use-ndk";
 
 export const ConnectNIP07Button = (
   props: ButtonProps & { onConnect?: () => void }
 ) => {
   const { setAlert } = useAlert();
 
+  const { connectToNip07 } = useNDK();
+
   const connect = useCallback(async () => {
     try {
-      await getNDK(new NDKNip07Signer());
+      await connectToNip07();
       setAlert({
         title: "Account Connected!",
       });
@@ -23,7 +24,7 @@ export const ConnectNIP07Button = (
         variant: "destructive",
       });
     }
-  }, [setAlert, props]);
+  }, [connectToNip07, setAlert, props]);
 
   return (
     <Button onClick={connect} {...props}>
