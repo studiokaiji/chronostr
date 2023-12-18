@@ -1,4 +1,4 @@
-import { type NDKEvent } from "@nostr-dev-kit/ndk";
+import type { NDKUser, NDKEvent } from "@nostr-dev-kit/ndk";
 
 type EventDateInput = {
   date: Date;
@@ -10,14 +10,47 @@ type EventDate = EventDateInput & {
   event: NDKEvent;
 };
 
-type EventCalenderInput = {
+type EventCalendarInput = {
   title: string;
   description?: string;
   dates: EventDateInput[];
 };
 
-type EventCalender = Omit<EventCalenderInput, "dates"> & {
+type EventCalendar = Omit<EventCalendarInput, "dates"> & {
   event: NDKEvent;
   id: string;
   dates: EventDate[];
+};
+
+type RSVPStatus = "accepted" | "declined" | "tentative";
+
+type EventRSVPInput = {
+  name?: string;
+  rsvpList: {
+    date: EventDate;
+    status: RSVPStatus;
+  }[];
+  calenderId: string;
+  comment?: string;
+};
+
+type RSVPPerUsers = {
+  [pubkey in string]: {
+    user: NDKUser;
+    rsvp: {
+      [id in string]: {
+        status: RSVPStatus;
+        event: NDKEvent;
+      };
+    };
+  };
+};
+
+type RSVPTotal = {
+  [status in RSVPStatus]: number;
+};
+
+type GetRSVPResponse = {
+  rsvpPerUsers: RSVPPerUsers;
+  totals: RSVPTotal[];
 };
