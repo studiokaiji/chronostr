@@ -12,16 +12,15 @@ import { CloseIcon } from "@/components/icons/close-icon";
 import { TriangleIcon } from "@/components/icons/triangle-icon";
 import type { EventCalendar, GetRSVPResponse } from "@/event";
 import { formatDate } from "@/lib/formatDate";
+import { memo } from "react";
 
 type CalendarProps = {
   calendar: EventCalendar;
-  rsvp: GetRSVPResponse;
+  rsvp?: GetRSVPResponse;
 };
 
-export const CalendarTable = ({
-  calendar,
-  rsvp: { rsvpPerUsers, totals },
-}: CalendarProps) => {
+export const CalendarTable = memo(({ calendar, rsvp }: CalendarProps) => {
+  const rsvpPerUsers = rsvp?.rsvpPerUsers;
   return (
     <Table>
       <TableHeader>
@@ -40,7 +39,7 @@ export const CalendarTable = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {Object.values(rsvpPerUsers).map((rsvp) => {
+        {Object.values(rsvpPerUsers || {}).map((rsvp) => {
           return (
             <TableRow key={rsvp.user.profile?.name}>
               <TableCell>
@@ -72,20 +71,23 @@ export const CalendarTable = ({
       <TableFooter>
         <TableRow>
           <TableCell>Total</TableCell>
-          {totals.map((total, i) => (
-            <TableCell key={`total-${i}`}>
-              <div className="flex items-center space-x-1">
-                <CircleIcon className="fill-lime-600 w-3.5" />
-                <div>{total.accepted}</div>
-              </div>
-              <div className="flex items-center space-x-1">
-                <TriangleIcon className="fill-yellow-500 w-3.5" />
-                <div>{total.tentative}</div>
-              </div>
-            </TableCell>
-          ))}
+          {calendar.dates.map((_, i) => {
+            const total = rsvp?.totals?.[i];
+            return (
+              <TableCell key={`total-${i}`}>
+                <div className="flex items-center space-x-1">
+                  <CircleIcon className="fill-lime-600 w-3.5" />
+                  <div>{total?.accepted || 0}</div>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <TriangleIcon className="fill-yellow-500 w-3.5" />
+                  <div>{total?.tentative || 0}</div>
+                </div>
+              </TableCell>
+            );
+          })}
         </TableRow>
       </TableFooter>
     </Table>
   );
-};
+});
