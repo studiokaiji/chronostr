@@ -1,4 +1,4 @@
-import { FormEventHandler, useState } from "react";
+import { FormEventHandler, memo, useState } from "react";
 import { Calendar } from "./ui/calendar";
 import { TextField } from "./ui/text-field";
 import { TextareaWithLabel } from "./ui/textarea-with-label";
@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { EventDateInput } from "@/event";
 import { useNDK } from "@/hooks/use-ndk";
 
-export const CreateNewEvent = () => {
+export const CreateNewEvent = memo(() => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
@@ -32,7 +32,7 @@ export const CreateNewEvent = () => {
 
   const navigate = useNavigate();
 
-  const { ndk } = useNDK();
+  const { ndk, connectToNip07 } = useNDK();
 
   const [isCreating, setIsCreating] = useState(false);
 
@@ -66,7 +66,9 @@ export const CreateNewEvent = () => {
         });
       }
 
-      const ev = await createEventCalendar(ndk, {
+      const nd = ndk.signer ? ndk : await connectToNip07();
+
+      const ev = await createEventCalendar(nd, {
         title,
         description,
         dates,
@@ -160,7 +162,7 @@ You can also enter the date from the calendar.
       </div>
     </form>
   );
-};
+});
 
 const safeParseISO8601String = (strDate: string) => {
   try {

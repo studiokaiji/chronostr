@@ -1,15 +1,28 @@
 import {
+  CALENDAR_EVENT_RSVP_KIND,
   DRAFT_CALENDAR_KIND,
   DRAFT_DATE_BASED_CALENDAR_EVENT_KIND,
   DRAFT_TIME_BASED_CALENDAR_EVENT_KIND,
 } from "@/consts";
-import { EventCalender, EventCalenderInput, EventDate } from "@/event";
-import { getNDK } from "@/ndk";
-import { NDKEvent, NDKFilter } from "@nostr-dev-kit/ndk";
+import {
+  EventCalendar,
+  EventCalendarInput,
+  EventDate,
+  EventRSVPInput,
+  RSVPPerUsers,
+  RSVPStatus,
+} from "@/event";
+import NDK, {
+  NDKEvent,
+  NDKFilter,
+  NDKPrivateKeySigner,
+} from "@nostr-dev-kit/ndk";
+import { AppLocalStorage } from "./app-local-storage";
 
-export const createEventCalendar = async (input: EventCalenderInput) => {
-  const ndk = await getNDK();
-
+export const createEventCalendar = async (
+  ndk: NDK,
+  input: EventCalendarInput
+) => {
   // Create Draft Date/Time Calendar Events
   const candidateDateEvents = await Promise.all(
     input.dates.map(async (date, i) => {
@@ -50,7 +63,7 @@ export const createEventCalendar = async (input: EventCalenderInput) => {
     if (!dTag) {
       throw Error("Invalid event");
     }
-    return ["a", `${ev.kind}:${ev.pubkey}:${dTag[1]}`];
+    return ["a", ev.tagId()];
   });
 
   draftCalendarEvent.tags = [
@@ -71,9 +84,7 @@ export const createEventCalendar = async (input: EventCalenderInput) => {
   return draftCalendarEvent;
 };
 
-export const getEventCalendar = async (naddr: string) => {
-  const ndk = await getNDK();
-
+export const getEventCalendar = async (ndk: NDK, naddr: string) => {
   const calendarEvent = await ndk.fetchEvent(naddr);
   if (!calendarEvent) {
     return null;
@@ -112,12 +123,12 @@ export const getEventCalendar = async (naddr: string) => {
     const eventDate: EventDate = {
       date,
       includeTime,
-      id: ev.id,
+      id: ev.tagId(),
       event: ev,
     };
     dates.push(eventDate);
   }
-  const calendar: EventCalender = {
+  const calendar: EventCalendar = {
     title: calendarEvent.tagValue("title") || "",
     description: calendarEvent.content,
     dates,
@@ -126,4 +137,153 @@ export const getEventCalendar = async (naddr: string) => {
   };
 
   return calendar;
+};
+
+export const rsvpEvent = async (
+  ndk: NDK,
+  input: EventRSVPInput,
+  isUpdate = false
+) => {
+  let signer: NDKPrivateKeySigner | undefined;
+
+  const promises = [];
+
+  // nameが指定されている場合はprivateを指定
+  if (input.name) {
+    const appLocalStorage = new AppLocalStorage();
+
+    const privateStorageKey = `${input.calenderId}.privateKey`;
+
+    // updateする場合はローカルストレージの秘密鍵を利用する
+    if (isUpdate) {
+      const privateKey = appLocalStorage.getItem(privateStorageKey);
+      if (!privateKey) {
+        throw Error("Private key does not exist.");
+      }
+      signer = new NDKPrivateKeySigner(privateKey);
+    } else {
+      signer = NDKPrivateKeySigner.generate();
+    }
+
+    const user = await signer.user();
+
+    user.profile ??= {};
+    user.profile.displayName = input.name;
+    user.profile.about = "chronostr anonymous user";
+
+    appLocalStorage.setItem(privateStorageKey, signer.privateKey || "");
+    promises.push(user.publish());
+  }
+
+  const events = await Promise.all(
+    input.rsvpList.map(async (rsvp) => {
+      const ev = new NDKEvent(ndk);
+      ev.kind = CALENDAR_EVENT_RSVP_KIND;
+
+      const tags = [];
+
+      tags.push(["a", rsvp.date.id]);
+
+      tags.push(["d", crypto.randomUUID()]);
+      tags.push(["L", "status"]);
+      tags.push(["l", rsvp.status, "status"]);
+
+      ev.tags = tags;
+
+      await ev.sign(signer);
+
+      promises.push(ev.publish());
+
+      return ev;
+    })
+  );
+
+  await Promise.all(promises);
+
+  return events;
+};
+
+export const getRSVP = async (
+  ndk: NDK,
+  dates: EventDate[],
+  fetchProfiles = false
+) => {
+  const aTags = dates.map((date) => date.event.tagId());
+
+  const events = await ndk.fetchEvents([
+    {
+      kinds: [Number(CALENDAR_EVENT_RSVP_KIND)],
+      "#a": aTags,
+    },
+  ]);
+
+  const rsvpPerUsers: RSVPPerUsers = {};
+
+  const promises: Promise<unknown>[] = [];
+
+  const totalMap: {
+    [id: string]: {
+      [status in RSVPStatus]: number;
+    };
+  } = {};
+
+  events.forEach((ev) => {
+    const user = ev.author;
+
+    if (!rsvpPerUsers[user.pubkey]) {
+      rsvpPerUsers[user.pubkey] = {
+        user: user,
+        rsvp: {},
+      };
+      if (fetchProfiles) {
+        promises.push(rsvpPerUsers[user.pubkey].user.fetchProfile());
+      }
+    }
+
+    const statusTags = ev
+      .getMatchingTags("l")
+      .filter((tag) => tag[2] === "status");
+    if (!statusTags || statusTags.length < 1) {
+      return;
+    }
+
+    const statusTag = statusTags[0];
+    const status = statusTag[1] as RSVPStatus;
+    if (
+      status !== "accepted" &&
+      status !== "tentative" &&
+      status !== "declined"
+    ) {
+      return;
+    }
+
+    const aTag = ev.tagValue("a");
+    if (!aTag) {
+      return;
+    }
+
+    rsvpPerUsers[user.pubkey].rsvp[aTag] = {
+      event: ev,
+      status,
+    };
+
+    totalMap[aTag] ??= {
+      declined: 0,
+      tentative: 0,
+      accepted: 0,
+    };
+
+    totalMap[aTag][status]++;
+  });
+
+  const totals = dates.map((date) => totalMap[date.id]);
+
+  if (promises.length) {
+    await Promise.all(promises);
+  }
+
+  return {
+    rsvpPerUsers,
+    totals,
+  };
 };
