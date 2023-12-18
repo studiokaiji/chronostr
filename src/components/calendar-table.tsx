@@ -27,7 +27,7 @@ export const CalendarTable = memo(({ calendar, rsvp }: CalendarProps) => {
         <TableRow className="rounded-t-md">
           <TableHead>Name</TableHead>
           {calendar?.dates.map(({ id, date, includeTime }) => (
-            <TableHead id={id}>
+            <TableHead key={id}>
               <div>{formatDate(date)}</div>
               {includeTime && (
                 <div>
