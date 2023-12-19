@@ -34,6 +34,13 @@ type EventRSVPInput = {
   comment?: string;
 };
 
+type RSVP = {
+  [id in string]: {
+    status: RSVPStatus;
+    event: NDKEvent;
+  };
+};
+
 type RSVPPerUsers = {
   [pubkey in string]: {
     user: NDKUser;
