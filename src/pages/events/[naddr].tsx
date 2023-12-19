@@ -1,23 +1,20 @@
-import { CircleIcon } from "@/components/icons/circle-icon";
-import { CloseIcon } from "@/components/icons/close-icon";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useAlert } from "@/hooks/use-alert";
-import { getEventCalendar } from "@/services/event-calender";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { getEventCalendar, getRSVP } from "@/services/event-calender";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { ShareIcon } from "@/components/icons/share-icon";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
+import { JoinTheEventDialog } from "@/components/join-the-event";
+import { formatDate } from "@/lib/formatDate";
+import { useNDK } from "@/hooks/use-ndk";
+import type NDK from "@nostr-dev-kit/ndk";
+import { CalendarTable } from "@/components/calendar-table";
+import { AppLocalStorage } from "@/services/app-local-storage";
+
+const appStorage = new AppLocalStorage();
 
 export const EventCalendarPage = () => {
   const { naddr } = useParams();
@@ -27,39 +24,96 @@ export const EventCalendarPage = () => {
 
   const { setAlert } = useAlert();
 
+  const { ndk, assignPrivateKey } = useNDK();
+
   // Queries
-  const { data, error } = useSuspenseQuery({
-    queryKey: [naddr],
-    queryFn: ({ queryKey }) => getEventCalendar(queryKey[0]),
+  const { data: calendar } = useSuspenseQuery({
+    queryKey: [ndk, naddr],
+    queryFn: ({ queryKey }) => {
+      const [ndk, naddr] = queryKey as [NDK, string];
+      if (!ndk) {
+        return null;
+      }
+      return getEventCalendar(ndk, naddr);
+    },
+  });
+
+  const {
+    data: rsvp,
+    error: rsvpError,
+    refetch: rsvpRefetch,
+    isLoading: isRSVPLoading,
+  } = useQuery({
+    queryKey: [ndk, naddr, "rsvp"],
+    queryFn: ({ queryKey }) => {
+      const [ndk] = queryKey as [NDK?];
+      if (!ndk || !calendar) {
+        return null;
+      }
+      return getRSVP(ndk, calendar.dates, true);
+    },
   });
 
   useEffect(() => {
-    if (error) {
+    if (rsvpError) {
       setAlert({
-        title: error.name,
-        description: error.message,
+        title: rsvpError.name,
+        description: rsvpError?.message,
+        variant: "destructive",
       });
     }
-  }, [error, setAlert]);
+  }, [rsvpError, setAlert]);
+  useEffect(() => {
+    if (!calendar || ndk?.activeUser) {
+      return;
+    }
 
-  const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
-    month: "2-digit",
-    day: "2-digit",
-    weekday: "short",
-  });
+    const privKey = appStorage.getItem(`${calendar.id}.privateKey`);
+    if (!privKey) {
+      return;
+    }
+
+    assignPrivateKey(privKey).catch((e) => {
+      setAlert({
+        title: "Account Error",
+        description: e,
+      });
+    });
+  }, [assignPrivateKey, calendar, ndk?.activeUser, setAlert]);
+
+  const submitRSVPErrorHandler = (e: unknown) => {
+    console.log(e);
+    setAlert({
+      title: "Failed to Submit.",
+      description: String(e),
+      variant: "destructive",
+    });
+  };
+
+  const myRSVP = useMemo(() => {
+    if (!rsvp || !ndk || !ndk.activeUser) return undefined;
+    if (ndk.activeUser.pubkey in rsvp.rsvpPerUsers) {
+      return rsvp.rsvpPerUsers?.[ndk.activeUser.pubkey];
+    }
+    return undefined;
+  }, [ndk, rsvp]);
+
+  if (!calendar) {
+    return <></>;
+  }
 
   return (
     <Layout>
       <div className="space-y-4">
         <Card className="p-6 grow flex items-stretch justify-between">
           <div>
-            <h1 className="text-3xl font-bold">{data?.title}</h1>
-            <p className="text-gray-500">{data?.description}</p>
+            <h1 className="text-3xl font-bold">{calendar.title}</h1>
+            <p className="text-gray-500">{calendar.description}</p>
             <div className="mt-4 text-gray-500 font-medium">
-              <p>👤 20</p>
+              <p>👤 {Object.keys(rsvp?.rsvpPerUsers || {}).length}</p>
               <p>
-                🗓️ {dateTimeFormat.format(data?.dates[0].date)} ~{" "}
-                {dateTimeFormat.format(data?.dates.slice(-1)[0].date)}
+                🗓️ {formatDate(calendar.dates[0].date)} ~{" "}
+                {formatDate(calendar.dates.slice(-1)[0].date)}
               </p>
             </div>
           </div>
@@ -67,89 +121,18 @@ export const EventCalendarPage = () => {
             <Button size="icon" variant="secondary">
               <ShareIcon className="w-[18px] h-[18px] fill-gray-700" />
             </Button>
-            <Button className="text-base">✋ Join</Button>
+            <JoinTheEventDialog
+              eventCalender={calendar}
+              beforeRSVP={myRSVP?.rsvp}
+              isLoading={isRSVPLoading}
+              name={myRSVP?.user?.profile?.name}
+              onRSVPComplete={() => rsvpRefetch()}
+              onRSVPError={submitRSVPErrorHandler}
+            />
           </div>
         </Card>
         <Card>
-          <Table>
-            <TableHeader>
-              <TableRow className="rounded-t-md">
-                <TableHead>Name</TableHead>
-                {data?.dates.map(({ id, date, includeTime }) => (
-                  <TableHead id={id}>
-                    <div>{dateTimeFormat.format(date)}</div>
-                    {includeTime && (
-                      <div>
-                        {date.getHours()}:{("0" + date.getMinutes()).slice(-2)}
-                      </div>
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell>
-                  <div className="font-semibold">Alice</div>
-                </TableCell>
-                <TableCell>
-                  <CircleIcon className="fill-lime-600 w-5" />
-                </TableCell>
-                <TableCell>
-                  <CircleIcon className="fill-lime-600 w-5" />
-                </TableCell>
-                <TableCell>
-                  <CloseIcon className="fill-gray-400 w-5" />
-                </TableCell>
-                <TableCell>
-                  <CircleIcon className="fill-lime-600 w-5" />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>
-                  <div className="font-semibold">Bob</div>
-                </TableCell>
-                <TableCell>
-                  <CircleIcon className="fill-lime-600 w-5" />
-                </TableCell>
-                <TableCell>
-                  <CircleIcon className="fill-lime-600 w-5" />
-                </TableCell>
-                <TableCell>
-                  <CircleIcon className="fill-lime-600 w-5" />
-                </TableCell>
-                <TableCell>
-                  <CircleIcon className="fill-lime-600 w-5" />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>
-                  <div className="font-semibold">Carlos</div>
-                </TableCell>
-                <TableCell>
-                  <CloseIcon className="fill-gray-400 w-5" />
-                </TableCell>
-                <TableCell>
-                  <CloseIcon className="fill-gray-400 w-5" />
-                </TableCell>
-                <TableCell>
-                  <CloseIcon className="fill-gray-400 w-5" />
-                </TableCell>
-                <TableCell>
-                  <CircleIcon className="fill-lime-600 w-5" />
-                </TableCell>
-              </TableRow>
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell>Total</TableCell>
-                <TableCell>2</TableCell>
-                <TableCell>2</TableCell>
-                <TableCell>1</TableCell>
-                <TableCell>3</TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
+          <CalendarTable calendar={calendar} rsvp={rsvp || undefined} />
         </Card>
       </div>
     </Layout>

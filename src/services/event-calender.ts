@@ -16,6 +16,7 @@ import NDK, {
   NDKEvent,
   NDKFilter,
   NDKPrivateKeySigner,
+  serializeProfile,
 } from "@nostr-dev-kit/ndk";
 import { AppLocalStorage } from "./app-local-storage";
 
@@ -142,41 +143,61 @@ export const getEventCalendar = async (ndk: NDK, naddr: string) => {
 export const rsvpEvent = async (
   ndk: NDK,
   input: EventRSVPInput,
-  isUpdate = false
+  beforeRSVPEvents?: NDKEvent[]
 ) => {
+  if (
+    beforeRSVPEvents &&
+    (beforeRSVPEvents.length !== input.rsvpList.length || !ndk.signer)
+  ) {
+    throw Error("Invalid Request");
+  }
+
   let signer: NDKPrivateKeySigner | undefined;
 
-  const promises = [];
+  const promises: Promise<unknown>[] = [];
 
   // nameが指定されている場合はprivateを指定
   if (input.name) {
-    const appLocalStorage = new AppLocalStorage();
-
-    const privateStorageKey = `${input.calenderId}.privateKey`;
-
-    // updateする場合はローカルストレージの秘密鍵を利用する
-    if (isUpdate) {
-      const privateKey = appLocalStorage.getItem(privateStorageKey);
-      if (!privateKey) {
-        throw Error("Private key does not exist.");
-      }
-      signer = new NDKPrivateKeySigner(privateKey);
-    } else {
-      signer = NDKPrivateKeySigner.generate();
-    }
+    signer = NDKPrivateKeySigner.generate();
 
     const user = await signer.user();
 
-    user.profile ??= {};
-    user.profile.displayName = input.name;
-    user.profile.about = "chronostr anonymous user";
+    let publishRequired = true;
 
-    appLocalStorage.setItem(privateStorageKey, signer.privateKey || "");
-    promises.push(user.publish());
+    if (beforeRSVPEvents) {
+      const profile = await user.fetchProfile({
+        pool: ndk.pool,
+      });
+      publishRequired = profile?.displayName !== input.name;
+    }
+
+    if (publishRequired) {
+      user.profile ??= {};
+      user.profile.displayName = input.name;
+      user.profile.about = "chronostr anonymous user";
+
+      const event = new NDKEvent(ndk);
+      event.content = serializeProfile(user.profile);
+      event.kind = 0;
+
+      await event.sign(signer);
+
+      const appStorage = new AppLocalStorage();
+
+      promises.push(
+        (async () => {
+          await event.publish();
+          appStorage.setItem(
+            `${input.calenderId}.privateKey`,
+            signer.privateKey || ""
+          );
+        })()
+      );
+    }
   }
 
   const events = await Promise.all(
-    input.rsvpList.map(async (rsvp) => {
+    input.rsvpList.map(async (rsvp, i) => {
       const ev = new NDKEvent(ndk);
       ev.kind = CALENDAR_EVENT_RSVP_KIND;
 
@@ -184,7 +205,16 @@ export const rsvpEvent = async (
 
       tags.push(["a", rsvp.date.id]);
 
-      tags.push(["d", crypto.randomUUID()]);
+      if (beforeRSVPEvents) {
+        const dTag = beforeRSVPEvents[i]?.replaceableDTag();
+        if (!dTag) {
+          throw Error("Before RSVP event d tag is invalid");
+        }
+        tags.push(["d", dTag]);
+      } else {
+        tags.push(["d", crypto.randomUUID()]);
+      }
+
       tags.push(["L", "status"]);
       tags.push(["l", rsvp.status, "status"]);
 
@@ -236,7 +266,11 @@ export const getRSVP = async (
         rsvp: {},
       };
       if (fetchProfiles) {
-        promises.push(rsvpPerUsers[user.pubkey].user.fetchProfile());
+        promises.push(
+          rsvpPerUsers[user.pubkey].user.fetchProfile().catch(() => {
+            return {};
+          })
+        );
       }
     }
 
@@ -262,18 +296,20 @@ export const getRSVP = async (
       return;
     }
 
-    rsvpPerUsers[user.pubkey].rsvp[aTag] = {
-      event: ev,
-      status,
-    };
+    if (!rsvpPerUsers[user.pubkey].rsvp[aTag]) {
+      rsvpPerUsers[user.pubkey].rsvp[aTag] = {
+        event: ev,
+        status,
+      };
 
-    totalMap[aTag] ??= {
-      declined: 0,
-      tentative: 0,
-      accepted: 0,
-    };
+      totalMap[aTag] ??= {
+        declined: 0,
+        tentative: 0,
+        accepted: 0,
+      };
 
-    totalMap[aTag][status]++;
+      totalMap[aTag][status]++;
+    }
   });
 
   const totals = dates.map((date) => totalMap[date.id]);
