@@ -23,7 +23,7 @@ export const EventCalendarPage = () => {
 
   const { setAlert } = useAlert();
 
-  const { ndk, assignPrivateKey } = useNDK();
+  const { ndk, assignPrivateKey, signerType } = useNDK();
 
   // Queries
   const { data: calendar } = useSuspenseQuery({
@@ -133,7 +133,11 @@ export const EventCalendarPage = () => {
               eventCalender={calendar}
               beforeRSVP={myRSVP?.rsvp}
               isLoading={isRSVPLoading}
-              name={myRSVP?.user?.profile?.name}
+              name={
+                signerType === "privateKey"
+                  ? myRSVP?.user?.profile?.name
+                  : undefined
+              }
               onRSVPComplete={() => rsvpRefetch()}
               onRSVPError={submitRSVPErrorHandler}
             />
