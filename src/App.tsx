@@ -29,6 +29,14 @@ function App() {
                   <Route path="events">
                     <Route path=":naddr" element={<EventCalendarPage />} />
                   </Route>
+                  <Route
+                    path="*"
+                    element={
+                      <div className="text-center pt-4 pb-12 font-semibold text-2xl text-gray-500">
+                        Not Found
+                      </div>
+                    }
+                  />
                 </Route>
               </Routes>
             </HashRouter>
