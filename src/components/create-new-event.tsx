@@ -12,6 +12,7 @@ import { createEventCalendar } from "@/services/event-calender";
 import { useNavigate } from "react-router-dom";
 import { EventDateInput } from "@/event";
 import { useNDK } from "@/hooks/use-ndk";
+import { SelectSingleEventHandler } from "react-day-picker";
 
 export const CreateNewEvent = memo(() => {
   const [title, setTitle] = useState("");
@@ -21,7 +22,10 @@ export const CreateNewEvent = memo(() => {
 
   const { setAlert } = useAlert();
 
-  const selectDate = (date: Date) => {
+  const selectDate: SelectSingleEventHandler = (date: Date | undefined) => {
+    if (!date) {
+      return;
+    }
     const converted = [
       date.getFullYear(),
       date.getMonth() + 1,

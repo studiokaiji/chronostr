@@ -268,6 +268,7 @@ export const getRSVP = async (
       if (fetchProfiles) {
         promises.push(
           rsvpPerUsers[user.pubkey].user?.fetchProfile().catch((e) => {
+            console.error(e);
             return null;
           })
         );
