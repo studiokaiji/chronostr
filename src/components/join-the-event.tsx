@@ -35,7 +35,7 @@ export const JoinTheEvent = memo(
     onRSVPError,
     name: inputName,
   }: JoinTheEventProps) => {
-    const [name, setName] = useState(inputName || "");
+    const [name, setName] = useState<string>(inputName || "");
 
     const [rsvpStatuses, setRSVPStatuses] = useState<RSVPStatus[]>(
       beforeRSVP

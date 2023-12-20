@@ -161,6 +161,7 @@ export const rsvpEvent = async (
     signer = NDKPrivateKeySigner.generate();
 
     const user = await signer.user();
+    user.ndk = ndk;
 
     let publishRequired = true;
 
