@@ -53,7 +53,6 @@ export const EventCalendarPage = () => {
 
       try {
         const rsvp = await getRSVP(ndk, calendar.dates, true);
-        console.log(rsvp);
         return rsvp;
       } catch (e) {
         setAlert({
@@ -94,7 +93,6 @@ export const EventCalendarPage = () => {
   }, [assignPrivateKey, calendar, ndk?.activeUser, setAlert]);
 
   const submitRSVPErrorHandler = (e: unknown) => {
-    console.log(e);
     setAlert({
       title: "Failed to Submit.",
       description: String(e),
@@ -144,6 +142,10 @@ export const EventCalendarPage = () => {
         <Card>
           <CalendarTable calendar={calendar} rsvp={rsvp || undefined} />
         </Card>
+        <p className="text-center text-gray-500">
+          Chronostr - A scheduling adjustment and RSVP tool working on the
+          Nostr.
+        </p>
       </div>
     </Layout>
   );

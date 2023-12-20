@@ -267,16 +267,9 @@ export const getRSVP = async (
       };
       if (fetchProfiles) {
         promises.push(
-          rsvpPerUsers[user.pubkey].user
-            ?.fetchProfile()
-            .then((p) => {
-              console.log(p);
-              return p;
-            })
-            .catch((e) => {
-              console.log(e);
-              return null;
-            })
+          rsvpPerUsers[user.pubkey].user?.fetchProfile().catch((e) => {
+            return null;
+          })
         );
       }
     }

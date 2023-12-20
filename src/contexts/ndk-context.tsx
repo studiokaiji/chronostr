@@ -43,7 +43,6 @@ export const NDKContextProvider = ({ children }: { children: ReactNode }) => {
         signer
           .blockUntilReady()
           .then(() => {
-            console.log("nip07");
             createNewNDK(signer);
             setSignerType("nip07");
           })
