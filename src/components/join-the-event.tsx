@@ -39,7 +39,9 @@ export const JoinTheEvent = memo(
 
     const [rsvpStatuses, setRSVPStatuses] = useState<RSVPStatus[]>(
       beforeRSVP
-        ? Object.values(beforeRSVP).map(({ status }) => status)
+        ? eventCalender.dates.map(
+            (date) => beforeRSVP?.[date.id]?.status || "declined"
+          )
         : Array(eventCalender.dates.length).fill("declined")
     );
 
