@@ -9,7 +9,7 @@ export const Container = () => {
         <Header />
       </header>
       <Outlet />
-      <footer className="sticky bottom-0 left-0 w-full bg-slate-50">
+      <footer className="bg-slate-50">
         <Footer />
       </footer>
     </div>
