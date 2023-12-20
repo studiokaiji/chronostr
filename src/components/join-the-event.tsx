@@ -222,7 +222,7 @@ export const JoinTheEventDialog = (
   const [open, setOpen] = useState(false);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} modal>
       <DialogTrigger asChild>
         <Button disabled={props.isLoading}>
           {props.isLoading ? (
@@ -234,7 +234,7 @@ export const JoinTheEventDialog = (
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="overflow-y-scroll max-h-screen">
         <JoinTheEvent
           {...props}
           onRSVPComplete={(events) => {
