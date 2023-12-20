@@ -1,10 +1,8 @@
 import { Layout } from "@/components/layout";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAlert } from "@/hooks/use-alert";
 import { getEventCalendar, getRSVP } from "@/services/event-calender";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { ShareIcon } from "@/components/icons/share-icon";
 import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { JoinTheEventDialog } from "@/components/join-the-event";
@@ -13,6 +11,7 @@ import { useNDK } from "@/hooks/use-ndk";
 import type NDK from "@nostr-dev-kit/ndk";
 import { CalendarTable } from "@/components/calendar-table";
 import { AppLocalStorage } from "@/services/app-local-storage";
+import { CopyUrlButton } from "@/components/copy-url-button";
 
 const appStorage = new AppLocalStorage();
 
@@ -118,9 +117,7 @@ export const EventCalendarPage = () => {
             </div>
           </div>
           <div className="flex flex-col justify-between items-end">
-            <Button size="icon" variant="secondary">
-              <ShareIcon className="w-[18px] h-[18px] fill-gray-700" />
-            </Button>
+            <CopyUrlButton url={location.href} />
             <JoinTheEventDialog
               eventCalender={calendar}
               beforeRSVP={myRSVP?.rsvp}
