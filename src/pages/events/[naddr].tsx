@@ -142,10 +142,6 @@ export const EventCalendarPage = () => {
         <Card>
           <CalendarTable calendar={calendar} rsvp={rsvp || undefined} />
         </Card>
-        <p className="text-center text-gray-500">
-          Chronostr - A scheduling adjustment and RSVP tool working on the
-          Nostr.
-        </p>
       </div>
     </Layout>
   );
