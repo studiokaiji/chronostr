@@ -11,9 +11,15 @@ import {
   useState,
 } from "react";
 
+type SignerType = "privateKey" | "nip07";
+
 export const ndkContext = createContext<NDK | null>(null);
 export const setNDKContext = createContext<
   Dispatch<SetStateAction<NDK | null>>
+>(() => undefined);
+export const ndkSignerTypeContext = createContext<SignerType | null>(null);
+export const setNDKSignerTypeContext = createContext<
+  Dispatch<SetStateAction<SignerType | null>>
 >(() => undefined);
 
 const appStorage = new AppLocalStorage();
@@ -21,6 +27,8 @@ const appStorage = new AppLocalStorage();
 export const NDKContextProvider = ({ children }: { children: ReactNode }) => {
   const [ndk, setNDK] = useState<NDK | null>(null);
   const isCalledRef = useRef(false);
+
+  const [signerType, setSignerType] = useState<SignerType | null>(null);
 
   useEffect(() => {
     if (!ndk && !isCalledRef.current) {
@@ -34,13 +42,17 @@ export const NDKContextProvider = ({ children }: { children: ReactNode }) => {
         signer = new NDKNip07Signer();
         signer
           .blockUntilReady()
-          .then(() => createNewNDK(signer))
+          .then(() => {
+            console.log("nip07");
+            createNewNDK(signer);
+            setSignerType("nip07");
+          })
           .catch(() => createNewNDK());
       } else {
         createNewNDK();
       }
     }
-  }, []);
+  }, [ndk]);
 
   const createNewNDK = async (signer?: NDKSigner) => {
     const newNDK = new NDK({
@@ -58,7 +70,13 @@ export const NDKContextProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ndkContext.Provider value={ndk}>
-      <setNDKContext.Provider value={setNDK}>{children}</setNDKContext.Provider>
+      <setNDKContext.Provider value={setNDK}>
+        <ndkSignerTypeContext.Provider value={signerType}>
+          <setNDKSignerTypeContext.Provider value={setSignerType}>
+            {children}
+          </setNDKSignerTypeContext.Provider>
+        </ndkSignerTypeContext.Provider>
+      </setNDKContext.Provider>
     </ndkContext.Provider>
   );
 };

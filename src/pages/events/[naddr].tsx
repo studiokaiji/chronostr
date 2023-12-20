@@ -44,12 +44,24 @@ export const EventCalendarPage = () => {
     isLoading: isRSVPLoading,
   } = useQuery({
     queryKey: [ndk, naddr, "rsvp"],
-    queryFn: ({ queryKey }) => {
+    queryFn: async ({ queryKey }) => {
       const [ndk] = queryKey as [NDK?];
+
       if (!ndk || !calendar) {
         return null;
       }
-      return getRSVP(ndk, calendar.dates, true);
+
+      try {
+        const rsvp = await getRSVP(ndk, calendar.dates, true);
+        console.log(rsvp);
+        return rsvp;
+      } catch (e) {
+        setAlert({
+          title: "RSVP Fetch Error",
+          description: String(e),
+        });
+        throw e;
+      }
     },
   });
 
@@ -62,6 +74,7 @@ export const EventCalendarPage = () => {
       });
     }
   }, [rsvpError, setAlert]);
+
   useEffect(() => {
     if (!calendar || ndk?.activeUser) {
       return;

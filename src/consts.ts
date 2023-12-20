@@ -4,11 +4,12 @@ export const DRAFT_CALENDAR_KIND = 31928;
 export const CALENDAR_EVENT_RSVP_KIND = 31925;
 export const DEFAULT_RELAYS = [
   "ws://127.0.0.1:7777",
-  /*
   "wss://yabu.me",
-  "wss://nos.lol",
   "wss://relay.nostr.band",
-  "wss://relay.damus.io",
-  "wss://nostr.mom",
-  */
+  // "wss://nhlck50h-7777.asse.devtunnels.ms",
+  // "wss://yabu.me",
+  // "wss://nos.lol",
+  //  "wss://relay.nostr.band",
+  // "wss://relay.damus.io",
+  // "wss://nostr.mom",
 ];

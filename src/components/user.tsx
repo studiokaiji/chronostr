@@ -1,6 +1,7 @@
 import { NDKUser } from "@nostr-dev-kit/ndk";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "./ui/skeleton";
+import { useNDK } from "@/hooks/use-ndk";
 
 type UserProps = {
   user: NDKUser;
@@ -9,11 +10,19 @@ type UserProps = {
 const imageClass = "w-10 h-10 rounded-full border";
 
 export const User = ({ user }: UserProps) => {
+  const { ndk } = useNDK();
+
   const { data } = useQuery({
     queryKey: [user],
     queryFn: async ({ queryKey }) => {
       const [user] = queryKey;
-      const profile = await user.fetchProfile();
+      if (user.profile) {
+        return user.profile;
+      }
+
+      const profile = await user.fetchProfile({
+        pool: ndk?.pool,
+      });
       return profile;
     },
   });

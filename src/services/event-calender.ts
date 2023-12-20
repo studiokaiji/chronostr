@@ -267,9 +267,16 @@ export const getRSVP = async (
       };
       if (fetchProfiles) {
         promises.push(
-          rsvpPerUsers[user.pubkey].user.fetchProfile().catch(() => {
-            return {};
-          })
+          rsvpPerUsers[user.pubkey].user
+            ?.fetchProfile()
+            .then((p) => {
+              console.log(p);
+              return p;
+            })
+            .catch((e) => {
+              console.log(e);
+              return null;
+            })
         );
       }
     }
@@ -315,7 +322,12 @@ export const getRSVP = async (
   const totals = dates.map((date) => totalMap[date.id]);
 
   if (promises.length) {
-    await Promise.all(promises);
+    await new Promise<void>((resolve) => {
+      Promise.allSettled(promises).then(() => resolve());
+      setTimeout(() => {
+        resolve();
+      }, 3000);
+    });
   }
 
   return {
