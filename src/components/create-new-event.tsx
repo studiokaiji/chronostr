@@ -28,8 +28,8 @@ export const CreateNewEvent = memo(() => {
     }
     const converted = [
       date.getFullYear(),
-      date.getMonth() + 1,
-      date.getDate(),
+      (date.getMonth() + 1).toString().padStart(2, '0'),
+      date.getDate().toString().padStart(2, '0'),
     ].join("-");
     setDateString((str) => `${str ? `${str}\n` : ""}${converted}`);
   };
