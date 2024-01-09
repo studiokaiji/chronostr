@@ -116,7 +116,7 @@ export const getEventCalendar = async (ndk: NDK, naddr: string) => {
     if (!start) continue;
 
     const includeTime = !Number.isNaN(Number(start));
-    const date = new Date(start);
+    const date = new Date(includeTime ? Number(start) * 1000 : start);
     if (!date || Number.isNaN(date.getTime())) {
       continue;
     }
