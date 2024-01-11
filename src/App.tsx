@@ -8,7 +8,15 @@ import { Suspense } from "react";
 import { Spinner } from "./components/ui/spinner";
 import { NDKContextProvider } from "./contexts/ndk-context";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchInterval: false,
+    },
+  },
+});
 
 function App() {
   return (
