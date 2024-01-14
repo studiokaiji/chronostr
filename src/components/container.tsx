@@ -9,7 +9,7 @@ export const Container = () => {
         <Header />
       </header>
       <Outlet />
-      <footer className="bg-slate-50">
+      <footer className="bg-slate-50 mb-12">
         <Footer />
       </footer>
     </div>
