@@ -133,6 +133,7 @@ export const getEventCalendar = async (ndk: NDK, naddr: string) => {
     title: calendarEvent.tagValue("title") || "",
     description: calendarEvent.content,
     dates,
+    owner: calendarEvent.author,
     event: calendarEvent,
     id: calendarEvent.tagId(),
   };
