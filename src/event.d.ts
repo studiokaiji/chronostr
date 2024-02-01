@@ -20,6 +20,7 @@ type EventCalendar = Omit<EventCalendarInput, "dates"> & {
   event: NDKEvent;
   id: string;
   dates: EventDate[];
+  owner: NDKUser;
 };
 
 type RSVPStatus = "accepted" | "declined" | "tentative";
