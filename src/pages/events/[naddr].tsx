@@ -12,6 +12,7 @@ import type NDK from "@nostr-dev-kit/ndk";
 import { CalendarTable } from "@/components/calendar-table";
 import { AppLocalStorage } from "@/services/app-local-storage";
 import { CopyUrlButton } from "@/components/copy-url-button";
+import { User } from "@/components/user";
 
 const appStorage = new AppLocalStorage();
 
@@ -117,8 +118,19 @@ export const EventCalendarPage = () => {
       <div className="space-y-4">
         <Card className="p-6 grow flex items-stretch justify-between">
           <div>
-            <h1 className="text-3xl font-bold">{calendar.title}</h1>
-            <p className="text-gray-500">{calendar.description}</p>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold">{calendar.title}</h1>
+              <div>
+                <a
+                  href={`https://nostter.app/${calendar.owner.npub}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <User user={calendar.owner} type="info" />
+                </a>
+              </div>
+              <p className="text-gray-500">{calendar.description}</p>
+            </div>
             <div className="mt-4 text-gray-500 font-medium">
               <p>👤 {Object.keys(rsvp?.rsvpPerUsers || {}).length}</p>
               <p>
