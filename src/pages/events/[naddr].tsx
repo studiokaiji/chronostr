@@ -120,15 +120,14 @@ export const EventCalendarPage = () => {
           <div>
             <div className="space-y-2">
               <h1 className="text-3xl font-bold">{calendar.title}</h1>
-              <div>
-                <a
-                  href={`https://nostter.app/${calendar.owner.npub}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <User user={calendar.owner} type="info" />
-                </a>
-              </div>
+              <a
+                href={`https://nostter.app/${calendar.owner.npub}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block"
+              >
+                <User user={calendar.owner} type="info" />
+              </a>
               <p className="text-gray-500">{calendar.description}</p>
             </div>
             <div className="mt-4 text-gray-500 font-medium">
