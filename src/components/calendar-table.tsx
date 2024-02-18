@@ -13,6 +13,7 @@ import { TriangleIcon } from "@/components/icons/triangle-icon";
 import type { EventCalendar, GetRSVPResponse } from "@/event";
 import { formatDate } from "@/lib/formatDate";
 import { memo } from "react";
+import { getName } from "@/lib/user";
 
 type CalendarProps = {
   calendar: EventCalendar;
@@ -44,9 +45,7 @@ export const CalendarTable = memo(({ calendar, rsvp }: CalendarProps) => {
             <TableRow key={rsvp.user.profile?.name}>
               <TableCell>
                 <div className="max-w-[140px] overflow-hidden text-ellipsis">
-                  {rsvp.user.profile?.displayName ||
-                    rsvp.user.profile?.name ||
-                    rsvp.user.npub}
+                  {getName(rsvp.user)}
                 </div>
               </TableCell>
               {calendar.dates.map((date) => {
