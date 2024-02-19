@@ -72,7 +72,7 @@ export const JoinTheEvent = memo(
           <p className="text-gray-500">
             If you connect your Nostr account, your profile will be
             automatically filled in, and you will be able to make changes to
-            your schedule from other browsers as well.
+            your schedule and contact members from other browsers as well.
           </p>
           <div className="flex items-center space-x-2">
             <Button

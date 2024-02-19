@@ -13,6 +13,7 @@ import { CalendarTable } from "@/components/calendar-table";
 import { AppLocalStorage } from "@/services/app-local-storage";
 import { CopyUrlButton } from "@/components/copy-url-button";
 import { User } from "@/components/user";
+import { ContactDialog } from "@/components/contact";
 
 const appStorage = new AppLocalStorage();
 
@@ -93,7 +94,7 @@ export const EventCalendarPage = () => {
     });
   }, [assignPrivateKey, calendar, ndk?.activeUser, setAlert]);
 
-  const submitRSVPErrorHandler = (e: unknown) => {
+  const submitErrorHandler = (e: unknown) => {
     setAlert({
       title: "Failed to Submit.",
       description: String(e),
@@ -139,7 +140,15 @@ export const EventCalendarPage = () => {
             </div>
           </div>
           <div className="flex flex-col justify-between items-end">
-            <CopyUrlButton url={location.href} />
+            <div className="flex space-x-2">
+              <CopyUrlButton url={location.href} />
+              <ContactDialog
+                title={calendar.title}
+                rsvp={rsvp || undefined}
+                isLoading={isRSVPLoading}
+                onContactError={submitErrorHandler}
+              />
+            </div>
             <JoinTheEventDialog
               eventCalender={calendar}
               beforeRSVP={myRSVP?.rsvp}
@@ -149,8 +158,7 @@ export const EventCalendarPage = () => {
                   ? myRSVP?.user?.profile?.name
                   : undefined
               }
-              onRSVPComplete={() => rsvpRefetch()}
-              onRSVPError={submitRSVPErrorHandler}
+              onRSVPError={submitErrorHandler}
             />
           </div>
         </Card>
