@@ -158,6 +158,7 @@ export const EventCalendarPage = () => {
                   ? myRSVP?.user?.profile?.name
                   : undefined
               }
+              onRSVPComplete={() => rsvpRefetch()}
               onRSVPError={submitErrorHandler}
             />
           </div>
