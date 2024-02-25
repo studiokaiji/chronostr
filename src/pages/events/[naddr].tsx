@@ -14,7 +14,7 @@ import { AppLocalStorage } from "@/services/app-local-storage";
 import { CopyUrlButton } from "@/components/copy-url-button";
 import { User } from "@/components/user";
 import { ContactDialog } from "@/components/contact";
-import {Helmet} from 'react-helmet';
+import { Helmet } from "react-helmet";
 
 const appStorage = new AppLocalStorage();
 
