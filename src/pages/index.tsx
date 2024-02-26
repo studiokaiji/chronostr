@@ -1,10 +1,14 @@
 import { CreateNewEvent } from "@/components/create-new-event";
 import { Layout } from "@/components/layout";
 import { Card } from "@/components/ui/card";
+import { Helmet } from "react-helmet";
 
 export const IndexPage = () => {
   return (
     <Layout>
+      <Helmet>
+        <title>Chronostr</title>
+      </Helmet>
       <div className="flex flex-col items-center space-y-6 md:space-y-12">
         <div className="text-center">
           <h1 className="font-bold text-7xl">chronostr</h1>
