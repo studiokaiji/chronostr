@@ -145,7 +145,7 @@ export const ContactDialog = (
   return (
     <Dialog open={open} onOpenChange={setOpen} modal>
       <DialogTrigger asChild>
-        <Button disabled={props.isLoading}>
+        <Button variant="secondary" disabled={props.isLoading}>
           {props.isLoading ? <Spinner /> : "✉ Contact"}
         </Button>
       </DialogTrigger>
