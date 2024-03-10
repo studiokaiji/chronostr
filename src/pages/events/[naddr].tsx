@@ -122,9 +122,12 @@ export const EventCalendarPage = () => {
       </Helmet>
       <div className="space-y-4">
         <Card className="p-6 grow flex items-stretch justify-between">
-          <div>
+          <div className="w-full">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold">{calendar.title}</h1>
+              <div className="flex items-center justify-between w-full">
+                <h1 className="text-3xl font-bold">{calendar.title}</h1>
+                <CopyUrlButton url={location.href} />
+              </div>
               <a
                 href={`https://nostter.app/${calendar.owner.npub}`}
                 target="_blank"
@@ -135,36 +138,35 @@ export const EventCalendarPage = () => {
               </a>
               <p className="text-gray-500">{calendar.description}</p>
             </div>
-            <div className="mt-4 text-gray-500 font-medium">
-              <p>👤 {Object.keys(rsvp?.rsvpPerUsers || {}).length}</p>
-              <p>
-                🗓️ {formatDate(calendar.dates[0].date)} ~{" "}
-                {formatDate(calendar.dates.slice(-1)[0].date)}
-              </p>
+            <div className="sm:flex justify-between items-end">
+              <div className="mt-4 mr-4 text-gray-500 font-medium inline-block">
+                <p>👤 {Object.keys(rsvp?.rsvpPerUsers || {}).length}</p>
+                <p>
+                  🗓️ {formatDate(calendar.dates[0].date)} ~{" "}
+                  {formatDate(calendar.dates.slice(-1)[0].date)}
+                </p>
+              </div>
+              <div className="space-x-2 inline-block mt-4 sm:mt-0">
+                <ContactDialog
+                  title={calendar.title}
+                  rsvp={rsvp || undefined}
+                  isLoading={isRSVPLoading}
+                  onContactError={submitErrorHandler}
+                />
+                <JoinTheEventDialog
+                  eventCalender={calendar}
+                  beforeRSVP={myRSVP?.rsvp}
+                  isLoading={isRSVPLoading}
+                  name={
+                    signerType === "privateKey"
+                      ? myRSVP?.user?.profile?.name
+                      : undefined
+                  }
+                  onRSVPComplete={() => rsvpRefetch()}
+                  onRSVPError={submitErrorHandler}
+                />
+              </div>
             </div>
-          </div>
-          <div className="flex flex-col justify-between items-end">
-            <div className="flex space-x-2">
-              <CopyUrlButton url={location.href} />
-              <ContactDialog
-                title={calendar.title}
-                rsvp={rsvp || undefined}
-                isLoading={isRSVPLoading}
-                onContactError={submitErrorHandler}
-              />
-            </div>
-            <JoinTheEventDialog
-              eventCalender={calendar}
-              beforeRSVP={myRSVP?.rsvp}
-              isLoading={isRSVPLoading}
-              name={
-                signerType === "privateKey"
-                  ? myRSVP?.user?.profile?.name
-                  : undefined
-              }
-              onRSVPComplete={() => rsvpRefetch()}
-              onRSVPError={submitErrorHandler}
-            />
           </div>
         </Card>
         <Card>
