@@ -39,7 +39,7 @@ export const useNDK = () => {
       signer,
     });
 
-    await newNDK.connect();
+    await newNDK.connect(1000);
 
     setNDK(newNDK);
     setIsLoading(false);
@@ -60,7 +60,7 @@ export const useNDK = () => {
       signer,
     });
 
-    await newNDK.connect();
+    await newNDK.connect(1000);
 
     setNDK(newNDK);
     setIsLoading(false);
@@ -76,7 +76,7 @@ export const useNDK = () => {
     const newNDK = new NDK({
       explicitRelayUrls: getRelays(),
     });
-    await newNDK.connect();
+    await newNDK.connect(1000);
 
     appStorage.setItem("connected", String(false));
 

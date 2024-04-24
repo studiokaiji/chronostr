@@ -58,7 +58,7 @@ export const NDKContextProvider = ({ children }: { children: ReactNode }) => {
       explicitRelayUrls: getRelays(),
       signer,
     });
-    await newNDK.connect();
+    await newNDK.connect(1000);
 
     setNDK(newNDK);
 
