@@ -11,3 +11,4 @@ export const DEFAULT_RELAYS = [
   "wss://nostr.mom",
   "wss://nostr-relay.nokotaro.com",
 ];
+export const RELAY_TIMEOUT = 1000;
