@@ -1,3 +1,4 @@
+import { RELAY_TIMEOUT } from "@/consts";
 import {
   ndkContext,
   ndkSignerTypeContext,
@@ -39,7 +40,7 @@ export const useNDK = () => {
       signer,
     });
 
-    await newNDK.connect(1000);
+    await newNDK.connect(RELAY_TIMEOUT);
 
     setNDK(newNDK);
     setIsLoading(false);
@@ -60,7 +61,7 @@ export const useNDK = () => {
       signer,
     });
 
-    await newNDK.connect(1000);
+    await newNDK.connect(RELAY_TIMEOUT);
 
     setNDK(newNDK);
     setIsLoading(false);
@@ -76,7 +77,7 @@ export const useNDK = () => {
     const newNDK = new NDK({
       explicitRelayUrls: getRelays(),
     });
-    await newNDK.connect(1000);
+    await newNDK.connect(RELAY_TIMEOUT);
 
     appStorage.setItem("connected", String(false));
 

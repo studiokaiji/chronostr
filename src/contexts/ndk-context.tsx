@@ -1,3 +1,4 @@
+import { RELAY_TIMEOUT } from "@/consts";
 import { AppLocalStorage } from "@/services/app-local-storage";
 import { getRelays } from "@/services/relays";
 import NDK, { NDKNip07Signer, NDKSigner } from "@nostr-dev-kit/ndk";
@@ -58,7 +59,7 @@ export const NDKContextProvider = ({ children }: { children: ReactNode }) => {
       explicitRelayUrls: getRelays(),
       signer,
     });
-    await newNDK.connect(1000);
+    await newNDK.connect(RELAY_TIMEOUT);
 
     setNDK(newNDK);
 
