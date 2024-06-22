@@ -42,7 +42,7 @@ export const NDKContextProvider = ({ children }: { children: ReactNode }) => {
       if (strConnected && JSON.parse(strConnected.toLowerCase())) {
         signer = new NDKNip07Signer();
         signer
-          .blockUntilReady()
+          .user()
           .then(() => {
             createNewNDK(signer);
             setSignerType("nip07");
@@ -55,6 +55,8 @@ export const NDKContextProvider = ({ children }: { children: ReactNode }) => {
   }, [ndk]);
 
   const createNewNDK = async (signer?: NDKSigner) => {
+    setNDK(null);
+
     const newNDK = new NDK({
       explicitRelayUrls: getRelays(),
       signer,
