@@ -31,7 +31,7 @@ export const useNDK = () => {
     setIsLoading(true);
 
     const signer = new NDKNip07Signer();
-    if (!(await signer.blockUntilReady())) {
+    if (!(await signer.user())) {
       throw Error("Signer is not ready.");
     }
 
