@@ -15,6 +15,7 @@ import { CopyUrlButton } from "@/components/copy-url-button";
 import { User } from "@/components/user";
 import { ContactDialog } from "@/components/contact";
 import { Helmet } from "react-helmet";
+import { EventEditorDialog } from "@/components/event-editor";
 
 const appStorage = new AppLocalStorage();
 
@@ -29,7 +30,7 @@ export const EventCalendarPage = () => {
   const { ndk, assignPrivateKey, signerType } = useNDK();
 
   // Queries
-  const { data: calendar } = useSuspenseQuery({
+  const { data: calendar, refetch: calendarRefetch } = useSuspenseQuery({
     queryKey: [ndk, naddr],
     queryFn: ({ queryKey }) => {
       const [ndk, naddr] = queryKey as [NDK, string];
@@ -66,6 +67,11 @@ export const EventCalendarPage = () => {
       }
     },
   });
+
+  const isOwner = useMemo(
+    () => calendar?.owner.pubkey === ndk?.activeUser?.pubkey,
+    [calendar?.owner.pubkey, ndk?.activeUser?.pubkey]
+  );
 
   useEffect(() => {
     if (rsvpError) {
@@ -147,12 +153,22 @@ export const EventCalendarPage = () => {
                 </p>
               </div>
               <div className="space-x-2 inline-block mt-4 sm:mt-0">
-                <ContactDialog
-                  title={calendar.title}
-                  rsvp={rsvp || undefined}
-                  isLoading={isRSVPLoading}
-                  onContactError={submitErrorHandler}
-                />
+                {isOwner ? (
+                  <EventEditorDialog
+                    calendarId={calendar.id}
+                    defaultValue={calendar}
+                    onEditComplete={() => calendarRefetch()}
+                    onEditError={submitErrorHandler}
+                  />
+                ) : (
+                  <ContactDialog
+                    title={calendar.title}
+                    rsvp={rsvp || undefined}
+                    isLoading={isRSVPLoading}
+                    onContactError={submitErrorHandler}
+                  />
+                )}
+
                 <JoinTheEventDialog
                   eventCalender={calendar}
                   beforeRSVP={myRSVP?.rsvp}

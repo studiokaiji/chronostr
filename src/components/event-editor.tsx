@@ -1,4 +1,4 @@
-import { type FormEventHandler, memo, useState } from "react";
+import { type FormEventHandler, memo, useCallback, useState } from "react";
 import { Calendar } from "./ui/calendar";
 import { TextField } from "./ui/text-field";
 import { TextareaWithLabel } from "./ui/textarea-with-label";
@@ -13,10 +13,18 @@ import { useNavigate } from "react-router-dom";
 import type { EventCalendarInput, EventDateInput } from "@/event";
 import { useNDK } from "@/hooks/use-ndk";
 import type { SelectSingleEventHandler } from "react-day-picker";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+} from "./ui/dialog";
 
 type EventEditorProps = {
   calendarId?: string;
   defaultValue?: EventCalendarInput;
+  onEditComplete?: (calendarId: string) => void;
+  onEditError?: (e: unknown) => void;
 };
 
 const dateToString = (date: Date, includeTime: boolean) => {
@@ -38,7 +46,12 @@ const dateToString = (date: Date, includeTime: boolean) => {
 };
 
 export const EventEditor = memo(
-  ({ calendarId = crypto.randomUUID(), defaultValue }: EventEditorProps) => {
+  ({
+    calendarId = crypto.randomUUID(),
+    defaultValue,
+    onEditComplete: onSaved,
+    onEditError: onFailed,
+  }: EventEditorProps) => {
     const [title, setTitle] = useState(defaultValue?.title || "");
     const [description, setDescription] = useState(
       defaultValue?.description || ""
@@ -110,14 +123,18 @@ export const EventEditor = memo(
           calendarId
         );
 
-        const encoded = ev.encode();
+        const encoded = ev.tagAddress().split(":").slice(0, 2).join(":");
 
         navigate(`/events/${encoded}`);
+
+        onSaved?.(calendarId);
+
         setAlert({
-          title: "Event created!",
+          title: "Success!",
           variant: "default",
         });
       } catch (e) {
+        onFailed?.(e);
         setAlert({
           title: "Error",
           description: String(e),
@@ -186,7 +203,8 @@ You can also enter the date from the calendar.
           type="submit"
           disabled={isCreating}
         >
-          {isCreating && <Spinner />} <span>Create</span>
+          {isCreating && <Spinner />}{" "}
+          <span>{calendarId ? "Save" : "Create"}</span>
         </Button>
         <div className="text-gray-500 mt-2 text-sm">
           <p>1. Creating an event requires signing with NIP-07.</p>
@@ -211,4 +229,37 @@ const safeParseISO8601String = (strDate: string) => {
   } catch {
     return null;
   }
+};
+
+export const EventEditorDialog = (
+  props: EventEditorProps & { isLoading?: boolean }
+) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const close = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="secondary" disabled={props.isLoading}>
+          {props.isLoading ? <Spinner /> : "🖊️ Edit"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="overflow-y-scroll max-h-screen md:max-w-screen-sm md:w-full">
+        <DialogHeader>
+          <h2 className="text-3xl font-bold">Edit Event</h2>
+        </DialogHeader>
+        <EventEditor
+          {...props}
+          onEditComplete={(cid) => {
+            props.onEditComplete?.(cid);
+            close();
+          }}
+          onEditError={() => {
+            close();
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+  );
 };

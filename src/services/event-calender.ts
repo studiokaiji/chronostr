@@ -40,6 +40,7 @@ export const setEventCalendar = async (
 
       tags.push(["d", id]);
       tags.push(["name", `${input.title}-candidate-dates-${i}`]);
+      tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
 
       const start = date.includeTime
         ? String(Math.floor(date.date.getTime() / 1000))
@@ -89,8 +90,8 @@ export const setEventCalendar = async (
   return draftCalendarEvent;
 };
 
-export const getEventCalendar = async (ndk: NDK, naddr: string) => {
-  const calendarEvent = await ndk.fetchEvent(naddr);
+export const getEventCalendar = async (ndk: NDK, naddrOrDTag: string) => {
+  const calendarEvent = await ndk.fetchEvent(naddrOrDTag);
   if (!calendarEvent) {
     return null;
   }
