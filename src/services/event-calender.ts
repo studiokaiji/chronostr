@@ -20,17 +20,10 @@ import NDK, {
 } from "@nostr-dev-kit/ndk";
 import { AppLocalStorage } from "./app-local-storage";
 
-export const createEventCalendar = async (
-  ndk: NDK,
-  input: EventCalendarInput
-) => {
-  return setEventCalendar(ndk, crypto.randomUUID(), input);
-};
-
 export const setEventCalendar = async (
   ndk: NDK,
-  calendarId: string,
-  input: EventCalendarInput
+  input: EventCalendarInput,
+  calendarId: string = crypto.randomUUID()
 ) => {
   // Create Draft Date/Time Calendar Events
   const candidateDateEvents = await Promise.all(
