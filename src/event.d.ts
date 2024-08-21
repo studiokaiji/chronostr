@@ -11,12 +11,13 @@ type EventDate = EventDateInput & {
 };
 
 type EventCalendarInput = {
+  id?: string;
   title: string;
   description?: string;
   dates: EventDateInput[];
 };
 
-type EventCalendar = Omit<EventCalendarInput, "dates"> & {
+type EventCalendar = Omit<EventCalendarInput, "dates" | "id"> & {
   event: NDKEvent;
   id: string;
   dates: EventDate[];

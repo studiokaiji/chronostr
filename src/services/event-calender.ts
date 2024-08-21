@@ -20,9 +20,10 @@ import NDK, {
 } from "@nostr-dev-kit/ndk";
 import { AppLocalStorage } from "./app-local-storage";
 
-export const createEventCalendar = async (
+export const setEventCalendar = async (
   ndk: NDK,
-  input: EventCalendarInput
+  input: EventCalendarInput,
+  calendarId: string = crypto.randomUUID()
 ) => {
   // Create Draft Date/Time Calendar Events
   const candidateDateEvents = await Promise.all(
@@ -34,8 +35,12 @@ export const createEventCalendar = async (
       // tags
       const tags = [];
 
-      tags.push(["d", crypto.randomUUID()]);
+      const id =
+        typeof input.id === "undefined" ? crypto.randomUUID() : input.id;
+
+      tags.push(["d", id]);
       tags.push(["name", `${input.title}-candidate-dates-${i}`]);
+      tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
 
       const start = date.includeTime
         ? String(Math.floor(date.date.getTime() / 1000))
@@ -68,7 +73,7 @@ export const createEventCalendar = async (
   });
 
   draftCalendarEvent.tags = [
-    ["d", crypto.randomUUID()],
+    ["d", calendarId],
     ["title", input.title],
     ...aTags,
   ];
@@ -85,8 +90,8 @@ export const createEventCalendar = async (
   return draftCalendarEvent;
 };
 
-export const getEventCalendar = async (ndk: NDK, naddr: string) => {
-  const calendarEvent = await ndk.fetchEvent(naddr);
+export const getEventCalendar = async (ndk: NDK, naddrOrDTag: string) => {
+  const calendarEvent = await ndk.fetchEvent(naddrOrDTag);
   if (!calendarEvent) {
     return null;
   }
