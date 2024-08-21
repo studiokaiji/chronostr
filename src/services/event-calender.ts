@@ -24,6 +24,14 @@ export const createEventCalendar = async (
   ndk: NDK,
   input: EventCalendarInput
 ) => {
+  return setEventCalendar(ndk, crypto.randomUUID(), input);
+};
+
+export const setEventCalendar = async (
+  ndk: NDK,
+  calendarId: string,
+  input: EventCalendarInput
+) => {
   // Create Draft Date/Time Calendar Events
   const candidateDateEvents = await Promise.all(
     input.dates.map(async (date, i) => {
@@ -34,7 +42,10 @@ export const createEventCalendar = async (
       // tags
       const tags = [];
 
-      tags.push(["d", crypto.randomUUID()]);
+      const id =
+        typeof input.id === "undefined" ? crypto.randomUUID() : input.id;
+
+      tags.push(["d", id]);
       tags.push(["name", `${input.title}-candidate-dates-${i}`]);
 
       const start = date.includeTime
@@ -68,7 +79,7 @@ export const createEventCalendar = async (
   });
 
   draftCalendarEvent.tags = [
-    ["d", crypto.randomUUID()],
+    ["d", calendarId],
     ["title", input.title],
     ...aTags,
   ];
