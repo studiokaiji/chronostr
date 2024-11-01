@@ -28,6 +28,7 @@ import {
   DialogTrigger,
   DialogContent,
   DialogHeader,
+  DialogTitle,
 } from "./ui/dialog";
 import { Card } from "./ui/card";
 import { Trash2 } from "lucide-react";
@@ -332,7 +333,7 @@ export const EventEditorDialog = (
       </DialogTrigger>
       <DialogContent className="overflow-y-scroll max-h-screen md:max-w-screen-sm md:w-full">
         <DialogHeader>
-          <h2 className="text-3xl font-bold">Edit Event</h2>
+          <DialogTitle className="text-3xl">Edit Event</DialogTitle>
         </DialogHeader>
         <EventEditor
           {...props}
