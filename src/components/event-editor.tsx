@@ -2,6 +2,7 @@ import {
   type FormEventHandler,
   memo,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -88,6 +89,10 @@ export const EventEditor = memo(
       [removeRequestDateTagIds]
     );
 
+    useEffect(() => {
+      setRemoveRequestDateTagIds([]);
+    }, [currentValue]);
+
     const [dateString, setDateString] = useState("");
 
     const { setAlert } = useAlert();
@@ -120,7 +125,7 @@ export const EventEditor = memo(
         const dates: EventDateInput[] = [];
 
         // フィールドに何も入力されていない場合は、処理をスキップ
-        if (strDates && strDates.length > 1 && strDates[0] !== "") {
+        if (strDates && dateString) {
           for (const strDate of strDates) {
             const parsed = safeParseISO8601String(strDate);
             if (!parsed) {
@@ -235,12 +240,15 @@ export const EventEditor = memo(
                     ))}
                   </div>
                 </div>
-                <Label className="text-gray-500 block mt-1">
-                  {initialDates ? "New candidate dates" : "Candidate dates"}
-                </Label>
               </>
             )
           }
+
+          {currentValue && currentDates.length > 0 && (
+            <Label className="text-gray-500 block mt-1.5">
+              {initialDates ? "New candidate dates" : "Candidate dates"}
+            </Label>
+          )}
           <div className="border rounded-md flex flex-col-reverse items-center sm:items-stretch sm:flex-row h-[inherit] mt-1.5">
             <Calendar
               mode="single"
