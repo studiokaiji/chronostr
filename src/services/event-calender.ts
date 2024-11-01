@@ -25,7 +25,9 @@ export const updateEventCalendar = async (
   ndk: NDK,
   calendarId: string,
   addDates: EventDateInput[],
-  removeDateEventTagIds: string[]
+  removeDateEventTagIds: string[],
+  title?: string,
+  description?: string
 ) => {
   const calendarEvent = await ndk.fetchEvent(calendarId);
   if (!calendarEvent) {
@@ -36,6 +38,8 @@ export const updateEventCalendar = async (
   }
 
   const calendarWithoutDates = eventToCalendar(calendarEvent, []);
+  title ??= calendarWithoutDates.title;
+  description ??= calendarWithoutDates.description;
 
   // Create Draft Date/Time Calendar Events
   const newDateEvents = await Promise.all(
@@ -50,7 +54,7 @@ export const updateEventCalendar = async (
       const id = crypto.randomUUID();
 
       tags.push(["d", id]);
-      tags.push(["name", `${calendarWithoutDates.title}-candidate-dates-${i}`]);
+      tags.push(["name", `${title}-candidate-dates-${i}`]);
       tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
 
       const start = date.includeTime
@@ -58,7 +62,7 @@ export const updateEventCalendar = async (
         : date.date.toISOString();
       tags.push(["start", start]);
 
-      const content = calendarWithoutDates.description || "";
+      const content = description || "";
 
       const ev = new NDKEvent(ndk);
       ev.kind = kind;
@@ -90,11 +94,11 @@ export const updateEventCalendar = async (
 
   draftCalendarEvent.tags = [
     ["d", calendarEvent.dTag],
-    ["title", calendarWithoutDates.title],
+    ["title", title],
     ...baseATags,
     ...newATags,
   ];
-  draftCalendarEvent.content = calendarWithoutDates.description || "";
+  draftCalendarEvent.content = description || "";
 
   await draftCalendarEvent.sign();
 

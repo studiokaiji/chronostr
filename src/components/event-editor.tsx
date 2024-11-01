@@ -148,7 +148,9 @@ export const EventEditor = memo(
               nd,
               currentValue.id,
               dates,
-              removeRequestDateTagIds
+              removeRequestDateTagIds,
+              title,
+              description
             )
           : await createEventCalendar(nd, {
               title,
