@@ -141,8 +141,6 @@ export const EventEditor = memo(
 
         const nd = ndk.signer ? ndk : await connectToNip07();
 
-        console.log("currentValue", currentValue);
-
         const calendarId = currentValue?.id || crypto.randomUUID();
 
         const ev = currentValue

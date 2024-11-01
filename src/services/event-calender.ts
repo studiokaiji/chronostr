@@ -27,13 +27,6 @@ export const updateEventCalendar = async (
   addDates: EventDateInput[],
   removeDateEventTagIds: string[]
 ) => {
-  console.log(
-    "updateEventCalendar",
-    calendarId,
-    addDates,
-    removeDateEventTagIds
-  );
-
   const calendarEvent = await ndk.fetchEvent(calendarId);
   if (!calendarEvent) {
     throw Error("Calendar Event not found");
@@ -276,7 +269,7 @@ export const rsvpEvent = async (
   }
 
   const events = await Promise.all(
-    input.rsvpList.map(async (rsvp, i) => {
+    input.rsvpList.map(async (rsvp) => {
       const ev = new NDKEvent(ndk);
       ev.kind = CALENDAR_EVENT_RSVP_KIND;
 
