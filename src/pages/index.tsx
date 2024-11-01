@@ -1,4 +1,4 @@
-import { CreateNewEvent } from "@/components/create-new-event";
+import { EventEditor } from "@/components/event-editor";
 import { Layout } from "@/components/layout";
 import { Card } from "@/components/ui/card";
 import { Helmet } from "react-helmet";
@@ -18,7 +18,7 @@ export const IndexPage = () => {
         </div>
         <Card className="p-6 w-full mx-auto max-w-2xl space-y-6">
           <h2 className="text-3xl font-bold">Create New Event</h2>
-          <CreateNewEvent />
+          <EventEditor />
         </Card>
       </div>
     </Layout>
