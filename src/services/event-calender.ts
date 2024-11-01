@@ -42,38 +42,72 @@ export const updateEventCalendar = async (
   description ??= calendarWithoutDates.description;
 
   // Create Draft Date/Time Calendar Events
-  const newDateEvents = await Promise.all(
-    addDates.map(async (date, i) => {
-      const kind = date.includeTime
-        ? DRAFT_TIME_BASED_CALENDAR_EVENT_KIND
-        : DRAFT_DATE_BASED_CALENDAR_EVENT_KIND;
+  const newDateEvents = [];
 
-      // tags
-      const tags = [];
+  for (let i = 0; i < addDates.length; i++) {
+    const date = addDates[i];
+    const kind = date.includeTime
+      ? DRAFT_TIME_BASED_CALENDAR_EVENT_KIND
+      : DRAFT_DATE_BASED_CALENDAR_EVENT_KIND;
 
-      const id = crypto.randomUUID();
+    // tags
+    const tags = [];
 
-      tags.push(["d", id]);
-      tags.push(["name", `${title}-candidate-dates-${i}`]);
-      tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
+    const id = crypto.randomUUID();
 
-      const start = date.includeTime
-        ? String(Math.floor(date.date.getTime() / 1000))
-        : date.date.toISOString();
-      tags.push(["start", start]);
+    tags.push(["d", id]);
+    tags.push(["name", `${title}-candidate-dates-${i}`]);
+    tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
 
-      const content = description || "";
+    const start = date.includeTime
+      ? String(Math.floor(date.date.getTime() / 1000))
+      : date.date.toISOString();
+    tags.push(["start", start]);
 
-      const ev = new NDKEvent(ndk);
-      ev.kind = kind;
-      ev.tags = tags;
-      ev.content = content;
+    const content = description || "";
 
-      await ev.sign();
+    const ev = new NDKEvent(ndk);
+    ev.kind = kind;
+    ev.tags = tags;
+    ev.content = content;
 
-      return ev;
-    })
-  );
+    await ev.sign();
+
+    newDateEvents.push(ev);
+  }
+
+  // const newDateEvents = await Promise.all(
+  //   addDates.map(async (date, i) => {
+  //     const kind = date.includeTime
+  //       ? DRAFT_TIME_BASED_CALENDAR_EVENT_KIND
+  //       : DRAFT_DATE_BASED_CALENDAR_EVENT_KIND;
+
+  //     // tags
+  //     const tags = [];
+
+  //     const id = crypto.randomUUID();
+
+  //     tags.push(["d", id]);
+  //     tags.push(["name", `${title}-candidate-dates-${i}`]);
+  //     tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
+
+  //     const start = date.includeTime
+  //       ? String(Math.floor(date.date.getTime() / 1000))
+  //       : date.date.toISOString();
+  //     tags.push(["start", start]);
+
+  //     const content = description || "";
+
+  //     const ev = new NDKEvent(ndk);
+  //     ev.kind = kind;
+  //     ev.tags = tags;
+  //     ev.content = content;
+
+  //     await ev.sign();
+
+  //     return ev;
+  //   })
+  // );
 
   // Update Draft Calendar Event
   const currentCalendarTags = calendarEvent.getMatchingTags("a");
@@ -102,11 +136,17 @@ export const updateEventCalendar = async (
 
   await draftCalendarEvent.sign();
 
-  // Publish all
-  await Promise.all([
-    ...newDateEvents.map((ev) => ev.publish()),
-    draftCalendarEvent.publish(),
-  ]);
+  // Publish
+  for (const ev of newDateEvents) {
+    await ev.publish();
+  }
+
+  await draftCalendarEvent.publish();
+
+  // await Promise.all([
+  //   ...newDateEvents.map((ev) => ev.publish()),
+  //   draftCalendarEvent.publish(),
+  // ]);
 
   return draftCalendarEvent;
 };
@@ -116,38 +156,71 @@ export const createEventCalendar = async (
   input: EventCalendarInput
 ) => {
   // Create Draft Date/Time Calendar Events
-  const candidateDateEvents = await Promise.all(
-    input.dates.map(async (date, i) => {
-      const kind = date.includeTime
-        ? DRAFT_TIME_BASED_CALENDAR_EVENT_KIND
-        : DRAFT_DATE_BASED_CALENDAR_EVENT_KIND;
+  const candidateDateEvents = [];
 
-      // tags
-      const tags = [];
+  for (let i = 0; i < input.dates.length; i++) {
+    const date = input.dates[i];
+    const kind = date.includeTime
+      ? DRAFT_TIME_BASED_CALENDAR_EVENT_KIND
+      : DRAFT_DATE_BASED_CALENDAR_EVENT_KIND;
 
-      const id = crypto.randomUUID();
+    // tags
+    const tags = [];
 
-      tags.push(["d", id]);
-      tags.push(["name", `${input.title}-candidate-dates-${i}`]);
-      tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
+    const id = crypto.randomUUID();
 
-      const start = date.includeTime
-        ? String(Math.floor(date.date.getTime() / 1000))
-        : date.date.toISOString();
-      tags.push(["start", start]);
+    tags.push(["d", id]);
+    tags.push(["name", `${input.title}-candidate-dates-${i}`]);
+    tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
 
-      const content = input.description || "";
+    const start = date.includeTime
+      ? String(Math.floor(date.date.getTime() / 1000))
+      : date.date.toISOString();
+    tags.push(["start", start]);
 
-      const ev = new NDKEvent(ndk);
-      ev.kind = kind;
-      ev.tags = tags;
-      ev.content = content;
+    const content = input.description || "";
 
-      await ev.sign();
+    const ev = new NDKEvent(ndk);
+    ev.kind = kind;
+    ev.tags = tags;
+    ev.content = content;
 
-      return ev;
-    })
-  );
+    await ev.sign();
+    candidateDateEvents.push(ev);
+  }
+
+  // const candidateDateEvents = await Promise.all(
+  //   input.dates.map(async (date, i) => {
+  //     const kind = date.includeTime
+  //       ? DRAFT_TIME_BASED_CALENDAR_EVENT_KIND
+  //       : DRAFT_DATE_BASED_CALENDAR_EVENT_KIND;
+
+  //     // tags
+  //     const tags = [];
+
+  //     const id = crypto.randomUUID();
+
+  //     tags.push(["d", id]);
+  //     tags.push(["name", `${input.title}-candidate-dates-${i}`]);
+  //     tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
+
+  //     const start = date.includeTime
+  //       ? String(Math.floor(date.date.getTime() / 1000))
+  //       : date.date.toISOString();
+  //     tags.push(["start", start]);
+
+  //     const content = input.description || "";
+
+  //     const ev = new NDKEvent(ndk);
+  //     ev.kind = kind;
+  //     ev.tags = tags;
+  //     ev.content = content;
+
+  //     await ev.sign();
+
+  //     return ev;
+  //   })
+  // );
 
   // Create Draft Calendar Event
   const draftCalendarEvent = new NDKEvent(ndk);
@@ -173,10 +246,16 @@ export const createEventCalendar = async (
   await draftCalendarEvent.sign();
 
   // Publish all
-  await Promise.all([
-    ...candidateDateEvents.map((ev) => ev.publish()),
-    draftCalendarEvent.publish(),
-  ]);
+  for (const ev of candidateDateEvents) {
+    await ev.publish();
+  }
+
+  await draftCalendarEvent.publish();
+
+  // await Promise.all([
+  //   ...candidateDateEvents.map((ev) => ev.publish()),
+  //   draftCalendarEvent.publish(),
+  // ]);
 
   return draftCalendarEvent;
 };
@@ -229,8 +308,6 @@ export const rsvpEvent = async (
 
   let signer: NDKPrivateKeySigner | undefined;
 
-  const promises: Promise<unknown>[] = [];
-
   // nameが指定されている場合はprivateを指定
   if (input.name) {
     signer = NDKPrivateKeySigner.generate();
@@ -260,51 +337,77 @@ export const rsvpEvent = async (
 
       const appStorage = new AppLocalStorage();
 
-      promises.push(
-        (async () => {
-          await event.publish();
-          appStorage.setItem(
-            `${input.calenderId}.privateKey`,
-            signer.privateKey || ""
-          );
-        })()
+      await event.publish();
+      appStorage.setItem(
+        `${input.calenderId}.privateKey`,
+        signer.privateKey || ""
       );
     }
   }
 
-  const events = await Promise.all(
-    input.rsvpList.map(async (rsvp) => {
-      const ev = new NDKEvent(ndk);
-      ev.kind = CALENDAR_EVENT_RSVP_KIND;
+  const events = [];
+  for (const rsvp of input.rsvpList) {
+    const ev = new NDKEvent(ndk);
+    ev.kind = CALENDAR_EVENT_RSVP_KIND;
 
-      const tags = [];
+    const tags = [];
 
-      tags.push(["a", rsvp.date.id]);
+    tags.push(["a", rsvp.date.id]);
 
-      if (beforeRSVPEvents) {
-        const currentDTag = beforeRSVPEvents.find(
-          (bev) => bev.dTag && bev.dTag === rsvp.date.event.dTag
-        )?.dTag;
-        const dTag = currentDTag || crypto.randomUUID();
-        tags.push(["d", dTag]);
-      } else {
-        tags.push(["d", crypto.randomUUID()]);
-      }
+    if (beforeRSVPEvents) {
+      const currentDTag = beforeRSVPEvents.find(
+        (bev) => bev.dTag && bev.dTag === rsvp.date.event.dTag
+      )?.dTag;
+      const dTag = currentDTag || crypto.randomUUID();
+      tags.push(["d", dTag]);
+    } else {
+      tags.push(["d", crypto.randomUUID()]);
+    }
 
-      tags.push(["L", "status"]);
-      tags.push(["l", rsvp.status, "status"]);
+    tags.push(["L", "status"]);
+    tags.push(["l", rsvp.status, "status"]);
 
-      ev.tags = tags;
+    ev.tags = tags;
 
-      await ev.sign(signer);
+    await ev.sign(signer);
+    await ev.publish();
 
-      promises.push(ev.publish());
+    events.push(ev);
+  }
 
-      return ev;
-    })
-  );
+  // const events = await Promise.all(
+  //   input.rsvpList.map(async (rsvp) => {
+  //     const ev = new NDKEvent(ndk);
+  //     ev.kind = CALENDAR_EVENT_RSVP_KIND;
 
-  await Promise.all(promises);
+  //     const tags = [];
+
+  //     tags.push(["a", rsvp.date.id]);
+
+  //     if (beforeRSVPEvents) {
+  //       const currentDTag = beforeRSVPEvents.find(
+  //         (bev) => bev.dTag && bev.dTag === rsvp.date.event.dTag
+  //       )?.dTag;
+  //       const dTag = currentDTag || crypto.randomUUID();
+  //       tags.push(["d", dTag]);
+  //     } else {
+  //       tags.push(["d", crypto.randomUUID()]);
+  //     }
+
+  //     tags.push(["L", "status"]);
+  //     tags.push(["l", rsvp.status, "status"]);
+
+  //     ev.tags = tags;
+
+  //     await ev.sign(signer);
+
+  //     return ev;
+  //   })
+  // );
+
+  for (const ev of events) {
+    await ev.publish();
+  }
 
   return events;
 };
