@@ -9,6 +9,5 @@ export const DEFAULT_RELAYS = [
   "wss://relay.nostr.band",
   "wss://relay.damus.io",
   "wss://nostr.mom",
-  "wss://nostr-relay.nokotaro.com",
 ];
 export const RELAY_TIMEOUT = 1000;
