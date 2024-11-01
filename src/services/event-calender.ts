@@ -8,6 +8,7 @@ import {
   EventCalendar,
   EventCalendarInput,
   EventDate,
+  EventDateInput,
   EventRSVPInput,
   RSVPPerUsers,
   RSVPStatus,
@@ -20,10 +21,102 @@ import NDK, {
 } from "@nostr-dev-kit/ndk";
 import { AppLocalStorage } from "./app-local-storage";
 
-export const setEventCalendar = async (
+export const updateEventCalendar = async (
   ndk: NDK,
-  input: EventCalendarInput,
-  calendarId: string = crypto.randomUUID()
+  calendarId: string,
+  addDates: EventDateInput[],
+  removeDateEventTagIds: string[]
+) => {
+  console.log(
+    "updateEventCalendar",
+    calendarId,
+    addDates,
+    removeDateEventTagIds
+  );
+
+  const calendarEvent = await ndk.fetchEvent(calendarId);
+  if (!calendarEvent) {
+    throw Error("Calendar Event not found");
+  }
+  if (!calendarEvent.dTag) {
+    throw Error("Invalid Calendar Event");
+  }
+
+  const calendarWithoutDates = eventToCalendar(calendarEvent, []);
+
+  // Create Draft Date/Time Calendar Events
+  const newDateEvents = await Promise.all(
+    addDates.map(async (date, i) => {
+      const kind = date.includeTime
+        ? DRAFT_TIME_BASED_CALENDAR_EVENT_KIND
+        : DRAFT_DATE_BASED_CALENDAR_EVENT_KIND;
+
+      // tags
+      const tags = [];
+
+      const id = crypto.randomUUID();
+
+      tags.push(["d", id]);
+      tags.push(["name", `${calendarWithoutDates.title}-candidate-dates-${i}`]);
+      tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
+
+      const start = date.includeTime
+        ? String(Math.floor(date.date.getTime() / 1000))
+        : date.date.toISOString();
+      tags.push(["start", start]);
+
+      const content = calendarWithoutDates.description || "";
+
+      const ev = new NDKEvent(ndk);
+      ev.kind = kind;
+      ev.tags = tags;
+      ev.content = content;
+
+      await ev.sign();
+
+      return ev;
+    })
+  );
+
+  // Update Draft Calendar Event
+  const currentCalendarTags = calendarEvent.getMatchingTags("a");
+  const baseATags = currentCalendarTags.filter(
+    (tag) => !removeDateEventTagIds.includes(tag[1])
+  );
+
+  const draftCalendarEvent = new NDKEvent(ndk);
+  draftCalendarEvent.kind = DRAFT_CALENDAR_KIND;
+
+  const newATags = newDateEvents.map((ev) => {
+    const dTag = ev.tags.find((tags) => tags[0] === "d");
+    if (!dTag) {
+      throw Error("Invalid event");
+    }
+    return ["a", ev.tagId()];
+  });
+
+  draftCalendarEvent.tags = [
+    ["d", calendarEvent.dTag],
+    ["title", calendarWithoutDates.title],
+    ...baseATags,
+    ...newATags,
+  ];
+  draftCalendarEvent.content = calendarWithoutDates.description || "";
+
+  await draftCalendarEvent.sign();
+
+  // Publish all
+  await Promise.all([
+    ...newDateEvents.map((ev) => ev.publish()),
+    draftCalendarEvent.publish(),
+  ]);
+
+  return draftCalendarEvent;
+};
+
+export const createEventCalendar = async (
+  ndk: NDK,
+  input: EventCalendarInput
 ) => {
   // Create Draft Date/Time Calendar Events
   const candidateDateEvents = await Promise.all(
@@ -35,8 +128,7 @@ export const setEventCalendar = async (
       // tags
       const tags = [];
 
-      const id =
-        typeof input.id === "undefined" ? crypto.randomUUID() : input.id;
+      const id = crypto.randomUUID();
 
       tags.push(["d", id]);
       tags.push(["name", `${input.title}-candidate-dates-${i}`]);
@@ -71,6 +163,8 @@ export const setEventCalendar = async (
     }
     return ["a", ev.tagId()];
   });
+
+  const calendarId = crypto.randomUUID();
 
   draftCalendarEvent.tags = [
     ["d", calendarId],
@@ -117,32 +211,13 @@ export const getEventCalendar = async (ndk: NDK, naddrOrDTag: string) => {
   const dates: EventDate[] = [];
 
   for (const ev of dateEvents) {
-    const start = ev.tagValue("start");
-    if (!start) continue;
-
-    const includeTime = !Number.isNaN(Number(start));
-    const date = new Date(includeTime ? Number(start) * 1000 : start);
-    if (!date || Number.isNaN(date.getTime())) {
-      continue;
+    const date = eventToDate(ev);
+    if (date) {
+      dates.push(date);
     }
-
-    const eventDate: EventDate = {
-      date,
-      includeTime,
-      id: ev.tagId(),
-      event: ev,
-    };
-    dates.push(eventDate);
   }
-  const calendar: EventCalendar = {
-    title: calendarEvent.tagValue("title") || "",
-    description: calendarEvent.content,
-    dates,
-    owner: calendarEvent.author,
-    event: calendarEvent,
-    id: calendarEvent.tagId(),
-  };
 
+  const calendar = eventToCalendar(calendarEvent, dates);
   return calendar;
 };
 
@@ -334,5 +409,37 @@ export const getRSVP = async (
   return {
     rsvpPerUsers,
     totals,
+  };
+};
+
+const eventToCalendar = (
+  event: NDKEvent,
+  dates: EventDate[]
+): EventCalendar => {
+  return {
+    title: event.tagValue("title") || "",
+    description: event.content,
+    dates,
+    owner: event.author,
+    event: event,
+    id: event.tagAddress(),
+  };
+};
+
+const eventToDate = (event: NDKEvent): EventDate | null => {
+  const start = event.tagValue("start");
+  if (!start) return null;
+
+  const includeTime = !Number.isNaN(Number(start));
+  const date = new Date(includeTime ? Number(start) * 1000 : start);
+  if (!date || Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return {
+    date,
+    includeTime,
+    id: event.tagAddress(),
+    event,
   };
 };

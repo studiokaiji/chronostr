@@ -1,4 +1,10 @@
-import { type FormEventHandler, memo, useCallback, useState } from "react";
+import {
+  type FormEventHandler,
+  memo,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { Calendar } from "./ui/calendar";
 import { TextField } from "./ui/text-field";
 import { TextareaWithLabel } from "./ui/textarea-with-label";
@@ -8,9 +14,12 @@ import { Separator } from "./ui/separator";
 import { Textarea } from "./ui/textarea";
 import { useAlert } from "@/hooks/use-alert";
 import { Spinner } from "./ui/spinner";
-import { setEventCalendar } from "@/services/event-calender";
+import {
+  createEventCalendar,
+  updateEventCalendar,
+} from "@/services/event-calender";
 import { useNavigate } from "react-router-dom";
-import type { EventCalendarInput, EventDateInput } from "@/event";
+import type { EventCalendar, EventDateInput } from "@/event";
 import { useNDK } from "@/hooks/use-ndk";
 import type { SelectSingleEventHandler } from "react-day-picker";
 import {
@@ -19,10 +28,11 @@ import {
   DialogContent,
   DialogHeader,
 } from "./ui/dialog";
+import { Card } from "./ui/card";
+import { Trash2 } from "lucide-react";
 
 type EventEditorProps = {
-  calendarId?: string;
-  defaultValue?: EventCalendarInput;
+  currentValue?: EventCalendar;
   onEditComplete?: (calendarId: string) => void;
   onEditError?: (e: unknown) => void;
 };
@@ -47,23 +57,38 @@ const dateToString = (date: Date, includeTime: boolean) => {
 
 export const EventEditor = memo(
   ({
-    calendarId = crypto.randomUUID(),
-    defaultValue,
+    currentValue,
     onEditComplete: onSaved,
     onEditError: onFailed,
   }: EventEditorProps) => {
-    const [title, setTitle] = useState(defaultValue?.title || "");
+    const [title, setTitle] = useState(currentValue?.title || "");
     const [description, setDescription] = useState(
-      defaultValue?.description || ""
+      currentValue?.description || ""
     );
 
-    const [dateString, setDateString] = useState(
-      defaultValue?.dates
-        ? defaultValue.dates
-            .map(({ date, includeTime }) => dateToString(date, includeTime))
-            .join("\n")
-        : ""
+    // Update用
+    const initialDates = currentValue?.dates;
+    const [removeRequestDateTagIds, setRemoveRequestDateTagIds] = useState<
+      string[]
+    >([]);
+    const currentDates = useMemo(() => {
+      if (!initialDates) {
+        return [];
+      }
+      return initialDates.filter(
+        (date) => !removeRequestDateTagIds.includes(date.event.tagId())
+      );
+    }, [initialDates, removeRequestDateTagIds]);
+    const removeDate = useCallback(
+      async (dateEventTagId: string) => {
+        const newSet = new Set(removeRequestDateTagIds);
+        newSet.add(dateEventTagId);
+        setRemoveRequestDateTagIds([...newSet]);
+      },
+      [removeRequestDateTagIds]
     );
+
+    const [dateString, setDateString] = useState("");
 
     const { setAlert } = useAlert();
 
@@ -94,38 +119,51 @@ export const EventEditor = memo(
         const strDates = dateString.split("\n");
         const dates: EventDateInput[] = [];
 
-        for (const strDate of strDates) {
-          const parsed = safeParseISO8601String(strDate);
-          if (!parsed) {
-            setAlert({
-              title: "An invalid date was found.",
-              description: `"${strDate}" is not in accordance with ISO8601.`,
-              variant: "destructive",
+        // フィールドに何も入力されていない場合は、処理をスキップ
+        if (strDates && strDates.length > 1 && strDates[0] !== "") {
+          for (const strDate of strDates) {
+            const parsed = safeParseISO8601String(strDate);
+            if (!parsed) {
+              setAlert({
+                title: "An invalid date was found.",
+                description: `"${strDate}" is not in accordance with ISO8601.`,
+                variant: "destructive",
+              });
+              setIsCreating(false);
+              return;
+            }
+            dates.push({
+              date: parsed,
+              includeTime: strDate.includes(":"),
             });
-            setIsCreating(false);
-            return;
           }
-          dates.push({
-            date: parsed,
-            includeTime: strDate.includes(":"),
-          });
         }
 
         const nd = ndk.signer ? ndk : await connectToNip07();
 
-        const ev = await setEventCalendar(
-          nd,
-          {
-            title,
-            description,
-            dates,
-          },
-          calendarId
-        );
+        console.log("currentValue", currentValue);
 
-        const encoded = ev.tagAddress().split(":").slice(0, 2).join(":");
+        const calendarId = currentValue?.id || crypto.randomUUID();
 
-        navigate(`/events/${encoded}`);
+        const ev = currentValue
+          ? await updateEventCalendar(
+              nd,
+              currentValue.id,
+              dates,
+              removeRequestDateTagIds
+            )
+          : await createEventCalendar(nd, {
+              title,
+              description,
+              dates,
+            });
+
+        if (currentValue) {
+          navigate(`/events/${currentValue.id}`);
+        } else {
+          const encoded = ev.tagAddress();
+          navigate(`/events/${encoded}`);
+        }
 
         onSaved?.(calendarId);
 
@@ -160,11 +198,50 @@ export const EventEditor = memo(
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-        <div className="space-y-1.5">
+
+        <div>
           <Label>
-            {<span className="text-red-500">* </span>}📅 Candidate dates
+            {!initialDates && <span className="text-red-500">* </span>}📅
+            Candidate dates
           </Label>
-          <div className="border rounded-md flex flex-col-reverse items-center sm:items-stretch sm:flex-row h-[inherit]">
+          {
+            // Update時のみ表示
+            // 現在の候補日を表示
+            currentValue && currentDates.length > 0 && (
+              <>
+                <div className="mt-1">
+                  <Label className="text-gray-500 block">
+                    Current candidate dates
+                  </Label>
+                  <div className="space-y-1 max-w-72 mt-1">
+                    {currentDates.map((date) => (
+                      <Card
+                        className="flex justify-between items-center p-1"
+                        key={`initial-dates-${date.date.toString()}`}
+                      >
+                        <span className="px-2">
+                          {dateToString(date.date, date.includeTime)}
+                        </span>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          type="button"
+                          onClick={() => removeDate(date.event.tagId())}
+                          className="w-9 h-9 text-red-600 hover:text-white bg-red-100"
+                        >
+                          <Trash2 size={18} />
+                        </Button>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+                <Label className="text-gray-500 block mt-1">
+                  {initialDates ? "New candidate dates" : "Candidate dates"}
+                </Label>
+              </>
+            )
+          }
+          <div className="border rounded-md flex flex-col-reverse items-center sm:items-stretch sm:flex-row h-[inherit] mt-1.5">
             <Calendar
               mode="single"
               fromDate={new Date()}
@@ -194,7 +271,7 @@ You can also enter the date from the calendar.
 `}
               value={dateString}
               onChange={(e) => setDateString(e.target.value)}
-              required
+              required={!initialDates}
             />
           </div>
         </div>
@@ -204,7 +281,7 @@ You can also enter the date from the calendar.
           disabled={isCreating}
         >
           {isCreating && <Spinner />}{" "}
-          <span>{calendarId ? "Save" : "Create"}</span>
+          <span>{currentValue ? "Save" : "Create"}</span>
         </Button>
         <div className="text-gray-500 mt-2 text-sm">
           <p>1. Creating an event requires signing with NIP-07.</p>
