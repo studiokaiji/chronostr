@@ -155,8 +155,7 @@ export const EventCalendarPage = () => {
               <div className="space-x-2 inline-block mt-4 sm:mt-0">
                 {isOwner ? (
                   <EventEditorDialog
-                    calendarId={calendar.id}
-                    defaultValue={calendar}
+                    currentValue={calendar}
                     onEditComplete={() => calendarRefetch()}
                     onEditError={submitErrorHandler}
                   />
