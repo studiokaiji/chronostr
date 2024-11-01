@@ -226,10 +226,7 @@ export const rsvpEvent = async (
   input: EventRSVPInput,
   beforeRSVPEvents?: NDKEvent[]
 ) => {
-  if (
-    beforeRSVPEvents &&
-    (beforeRSVPEvents.length !== input.rsvpList.length || !ndk.signer)
-  ) {
+  if (beforeRSVPEvents && !ndk.signer) {
     throw Error("Invalid Request");
   }
 
@@ -288,10 +285,10 @@ export const rsvpEvent = async (
       tags.push(["a", rsvp.date.id]);
 
       if (beforeRSVPEvents) {
-        const dTag = beforeRSVPEvents[i]?.replaceableDTag();
-        if (!dTag) {
-          throw Error("Before RSVP event d tag is invalid");
-        }
+        const currentDTag = beforeRSVPEvents.find(
+          (bev) => bev.dTag && bev.dTag === rsvp.date.event.dTag
+        )?.dTag;
+        const dTag = currentDTag || crypto.randomUUID();
         tags.push(["d", dTag]);
       } else {
         tags.push(["d", crypto.randomUUID()]);
@@ -412,21 +409,22 @@ export const getRSVP = async (
   };
 };
 
-const eventToCalendar = (
+export const eventToCalendar = (
   event: NDKEvent,
   dates: EventDate[]
 ): EventCalendar => {
+  const sortedDates = dates.sort((a, b) => a.date.getTime() - b.date.getTime());
   return {
     title: event.tagValue("title") || "",
     description: event.content,
-    dates,
+    dates: sortedDates,
     owner: event.author,
     event: event,
     id: event.tagAddress(),
   };
 };
 
-const eventToDate = (event: NDKEvent): EventDate | null => {
+export const eventToDate = (event: NDKEvent): EventDate | null => {
   const start = event.tagValue("start");
   if (!start) return null;
 
