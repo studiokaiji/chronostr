@@ -57,7 +57,7 @@ export const updateEventCalendar = async (
 
     tags.push(["d", id]);
     tags.push(["name", `${title}-candidate-dates-${i}`]);
-    tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
+    tags.push(["a", [kind, ndk.activeUser!.pubkey, calendarId].join(":")]);
 
     const start = date.includeTime
       ? String(Math.floor(date.date.getTime() / 1000))
@@ -155,6 +155,8 @@ export const createEventCalendar = async (
   ndk: NDK,
   input: EventCalendarInput
 ) => {
+  const calendarId = crypto.randomUUID();
+
   // Create Draft Date/Time Calendar Events
   const candidateDateEvents = [];
 
@@ -171,7 +173,7 @@ export const createEventCalendar = async (
 
     tags.push(["d", id]);
     tags.push(["name", `${input.title}-candidate-dates-${i}`]);
-    tags.push(["a", [kind, ndk.activeUser!.pubkey, id].join(":")]);
+    tags.push(["a", [kind, ndk.activeUser!.pubkey, calendarId].join(":")]);
 
     const start = date.includeTime
       ? String(Math.floor(date.date.getTime() / 1000))
@@ -233,8 +235,6 @@ export const createEventCalendar = async (
     }
     return ["a", ev.tagId()];
   });
-
-  const calendarId = crypto.randomUUID();
 
   draftCalendarEvent.tags = [
     ["d", calendarId],
@@ -540,4 +540,83 @@ export const eventToDate = (event: NDKEvent): EventDate | null => {
     id: event.tagAddress(),
     event,
   };
+};
+
+/**
+ * ユーザーが参加しているイベントの一覧を取得
+ */
+export const getJoinedCalendarEvents = async (ndk: NDK, pubkey: string) => {
+  const rsvpEvents = await ndk.fetchEvents([
+    {
+      kinds: [CALENDAR_EVENT_RSVP_KIND as number],
+      authors: [pubkey || ""],
+    },
+  ]);
+
+  const dateEventATags = new Set<string>();
+  for (const rev of rsvpEvents) {
+    const aTag = rev.tagValue("a");
+    if (aTag) {
+      dateEventATags.add(aTag);
+    }
+  }
+
+  const dateEvents = await ndk.fetchEvents([
+    {
+      kinds: [
+        DRAFT_DATE_BASED_CALENDAR_EVENT_KIND,
+        DRAFT_TIME_BASED_CALENDAR_EVENT_KIND,
+      ] as number[],
+      "#d": [...dateEventATags]
+        .map((a) => a.split(":")?.[2] || "")
+        .filter((t) => t),
+    },
+  ]);
+
+  const calendarEventATags = new Set<string>();
+
+  for (const ev of dateEvents) {
+    const aTag = ev.tagValue("a");
+    if (!aTag) {
+      continue;
+    }
+    calendarEventATags.add(aTag);
+  }
+
+  const calendarEvents = await ndk.fetchEvents([
+    {
+      kinds: [DRAFT_CALENDAR_KIND as number],
+      "#d": [...calendarEventATags]
+        .map((aTag) => aTag.split(":")?.[2] || "")
+        .filter((t) => t),
+    },
+  ]);
+
+  const calendarDateATags = new Set<string>();
+  for (const ev of calendarEvents) {
+    const aTag = ev.tagValue("a");
+    if (!aTag) {
+      continue;
+    }
+    calendarDateATags.add(aTag);
+  }
+
+  const calendarDateEvents = await ndk.fetchEvents([
+    {
+      kinds: [
+        DRAFT_DATE_BASED_CALENDAR_EVENT_KIND,
+        DRAFT_TIME_BASED_CALENDAR_EVENT_KIND,
+      ] as number[],
+      "#d": [...calendarDateATags]
+        .map((aTag) => aTag.split(":")?.[2] || "")
+        .filter((t) => t),
+      limit: 200,
+    },
+  ]);
+
+  const dates = [...calendarDateEvents]
+    .map((ev) => eventToDate(ev))
+    .filter((d) => d !== null);
+
+  return [...calendarEvents].map((ev) => eventToCalendar(ev, dates));
 };
