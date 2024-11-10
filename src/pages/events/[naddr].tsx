@@ -113,7 +113,7 @@ export const EventCalendarPage = () => {
         <title>{calendar.title} | chronostr</title>
       </Helmet>
       <div className="space-y-4">
-        {rsvp && !isRSVPLoading && signerType && (
+        {rsvp && !isRSVPLoading && (
           <CalendarInfoCard
             pubkey={ndk?.activeUser?.pubkey || ""}
             calendar={calendar}
