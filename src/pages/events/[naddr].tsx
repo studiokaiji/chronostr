@@ -124,7 +124,7 @@ export const EventCalendarPage = () => {
   return (
     <Layout>
       <Helmet>
-        <title>{calendar.title} | Chronostr</title>
+        <title>{calendar.title} | chronostr</title>
       </Helmet>
       <div className="space-y-4">
         <Card className="p-6 grow flex items-stretch justify-between">

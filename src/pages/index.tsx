@@ -7,7 +7,7 @@ export const IndexPage = () => {
   return (
     <Layout>
       <Helmet>
-        <title>Chronostr</title>
+        <title>chronostr</title>
       </Helmet>
       <div className="flex flex-col items-center space-y-6 md:space-y-12">
         <div className="text-center">
