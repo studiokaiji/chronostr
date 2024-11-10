@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "./ui/skeleton";
 import { useNDK } from "@/hooks/use-ndk";
 import { getUserProfile } from "@/services/user";
+import { useEffect } from "react";
 
 type UserProps = {
   user: NDKUser;
@@ -16,13 +17,14 @@ export const User = ({ user, type = "onlyIcon" }: UserProps) => {
   const { ndk } = useNDK();
 
   const { data } = useQuery({
-    queryKey: [user],
+    queryKey: [ndk, user.npub],
     queryFn: async ({ queryKey }) => {
-      const [user] = queryKey;
-      if (!ndk) {
+      console.log("fetch", queryKey);
+      if (!ndk || !user) {
         return;
       }
       const profile = await getUserProfile(ndk, user);
+      console.log("profile", profile);
       return profile;
     },
   });
