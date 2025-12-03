@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import { GetRSVPResponse } from "@/event";
 import { FormEvent, memo, useEffect, useState } from "react";
 import { ConnectNIP07Button } from "./connect-nip07-button";
+import { useI18n } from "@/hooks/use-i18n";
 import { useNDK } from "@/hooks/use-ndk";
 import { Spinner } from "./ui/spinner";
 import { TextareaWithLabel } from "./ui/textarea-with-label";
@@ -29,6 +30,7 @@ export const Contact = memo(
     onContactCancel,
     onContactError,
   }: ContactProps) => {
+    const { t } = useI18n();
     const { ndk } = useNDK();
 
     const [displayAuthConfirm, setDisplayAuthConfirm] = useState(
@@ -48,13 +50,13 @@ export const Contact = memo(
     if (contactList.length <= 0) {
       return (
         <div className="flex flex-col items-center justify-center text-center space-y-4">
-          <p className="font-semibold text-lg">No participants</p>
+          <p className="font-semibold text-lg">{t.contact.noParticipants}</p>
           <p className="text-gray-500">
-            This event does not appear to have any participants yet.
+            {t.contact.noParticipantsDescription}
           </p>
           <div className="flex items-center space-x-2">
             <Button variant="secondary" onClick={onContactCancel}>
-              Got it
+              {t.common.gotIt}
             </Button>
           </div>
         </div>
@@ -63,15 +65,11 @@ export const Contact = memo(
     if (displayAuthConfirm) {
       return (
         <div className="flex flex-col items-center justify-center text-center space-y-4">
-          <p className="font-semibold text-lg">Connect to Nostr Account?</p>
-          <p className="text-gray-500">
-            If you connect your Nostr account, your profile will be
-            automatically filled in, and you will be able to make changes to
-            your schedule and contact members from other browsers as well.
-          </p>
+          <p className="font-semibold text-lg">{t.joinEvent.connectToNostr}</p>
+          <p className="text-gray-500">{t.joinEvent.connectDescription}</p>
           <div className="flex items-center space-x-2">
             <Button variant="secondary" onClick={onContactCancel}>
-              No Thanks
+              {t.common.noThanks}
             </Button>
             <ConnectNIP07Button
               onConnect={() => setDisplayAuthConfirm(false)}
@@ -87,12 +85,12 @@ export const Contact = memo(
       if (names.length === 1) {
         const name = names[0];
 
-        return `Replying to ${name}`;
+        return t.contact.replyingTo(name);
       } else {
         const former = names.slice(0, -1);
         const last = names[names.length - 1];
 
-        return `Replying to ${former.join(", ")} and ${last}`;
+        return t.contact.replyingToMultiple(former, last);
       }
     };
 
@@ -121,16 +119,16 @@ export const Contact = memo(
 
     return (
       <form className="space-y-4" onSubmit={submit}>
-        <p className="font-semibold">Contact</p>
+        <p className="font-semibold">{t.contact.title}</p>
         <TextareaWithLabel
           label={replyingTo()}
-          placeholder="Let's all go eat some delicious ostrich!"
+          placeholder={t.eventEditor.descriptionPlaceholder}
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />
 
         <Button className="w-full space-x-1 flex items-center" type="submit">
-          {isLoading && <Spinner />} <span>Submit</span>
+          {isLoading && <Spinner />} <span>{t.common.submit}</span>
         </Button>
       </form>
     );
@@ -140,13 +138,14 @@ export const Contact = memo(
 export const ContactDialog = (
   props: ContactProps & { isLoading?: boolean }
 ) => {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen} modal>
       <DialogTrigger asChild>
         <Button variant="secondary" disabled={props.isLoading}>
-          {props.isLoading ? <Spinner /> : "✉ Contact"}
+          {props.isLoading ? <Spinner /> : `✉ ${t.contact.title}`}
         </Button>
       </DialogTrigger>
       <DialogContent className="overflow-y-scroll max-h-screen">

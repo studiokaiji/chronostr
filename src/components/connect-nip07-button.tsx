@@ -1,4 +1,5 @@
 import { useAlert } from "@/hooks/use-alert";
+import { useI18n } from "@/hooks/use-i18n";
 import { useCallback } from "react";
 import { Button, ButtonProps } from "./ui/button";
 import { useNDK } from "@/hooks/use-ndk";
@@ -6,6 +7,7 @@ import { useNDK } from "@/hooks/use-ndk";
 export const ConnectNIP07Button = (
   props: ButtonProps & { onConnect?: () => void }
 ) => {
+  const { t } = useI18n();
   const { setAlert } = useAlert();
 
   const { connectToNip07 } = useNDK();
@@ -14,21 +16,21 @@ export const ConnectNIP07Button = (
     try {
       await connectToNip07();
       setAlert({
-        title: "Account Connected!",
+        title: t.nip07.accountConnected,
       });
       if (props.onConnect) props.onConnect();
     } catch (e) {
       setAlert({
-        title: "Failed to connect",
+        title: t.nip07.failedToConnect,
         description: String(e),
         variant: "destructive",
       });
     }
-  }, [connectToNip07, setAlert, props]);
+  }, [connectToNip07, setAlert, props, t]);
 
   return (
     <Button onClick={connect} {...props}>
-      {props.children || "Connect"}
+      {props.children || t.common.connect}
     </Button>
   );
 };

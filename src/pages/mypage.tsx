@@ -2,6 +2,7 @@ import { CalendarInfoCard } from "@/components/calendar-info-card";
 import { Layout } from "@/components/layout";
 import { Spinner } from "@/components/ui/spinner";
 import { useAlert } from "@/hooks/use-alert";
+import { useI18n } from "@/hooks/use-i18n";
 import { useNDK } from "@/hooks/use-ndk";
 import { getJoinedCalendarEvents } from "@/services/event-calender";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 export const MyPage = () => {
   const { ndk, isLoading } = useNDK();
+  const { t } = useI18n();
 
   const navigate = useNavigate();
   const { setAlert } = useAlert();
@@ -18,24 +20,26 @@ export const MyPage = () => {
   useEffect(() => {
     if (!ndk && !isLoading) {
       setAlert({
-        title: "Please connect to NIP-07 client first.",
+        title: t.mypage.pleaseConnect,
       });
       navigate("/", { replace: true });
     }
-  }, [ndk, isLoading, setAlert, navigate]);
+  }, [ndk, isLoading, setAlert, navigate, t]);
 
   return (
     <>
       <Helmet>
-        <title>MyPage | chronostr</title>
+        <title>
+          {t.mypage.title} | {t.common.chronostr}
+        </title>
       </Helmet>
       <Layout>
         {!isLoading && ndk && (
           <div className="space-y-4">
-            <h1 className="text-3xl font-bold">My Page</h1>
+            <h1 className="text-3xl font-bold">{t.mypage.title}</h1>
             <div className="space-y-4">
               <h2 className="text-2xl font-bold text-gray-500">
-                Joined Events
+                {t.mypage.joinedEvents}
               </h2>
               <Suspense fallback={<Spinner />}>
                 <JoinedEvents />
