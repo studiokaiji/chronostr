@@ -1,9 +1,9 @@
-import { en, ja, type Translations } from "@/locales";
+import { en, ja } from "@/locales";
 import { useCallback, useSyncExternalStore } from "react";
 
 type Locale = "en" | "ja";
 
-const translations: Record<Locale, Translations> = { en, ja };
+const translations: Record<Locale, typeof en | typeof ja> = { en, ja };
 
 const getSystemLocale = (): Locale => {
   const lang = navigator.language.split("-")[0];
