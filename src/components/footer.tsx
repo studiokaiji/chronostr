@@ -1,10 +1,12 @@
+import { useI18n } from "@/hooks/use-i18n";
+
 export const Footer = () => {
+  const { t } = useI18n();
+
   return (
     <div className="px-4 border-gray-200 text-center text-gray-500">
-      <p className="font-semibold">chronostr</p>
-      <p className="text-sm">
-        A scheduling adjustment and RSVP tool working on the Nostr.
-      </p>
+      <p className="font-semibold">{t.common.chronostr}</p>
+      <p className="text-sm">{t.common.tagline}</p>
       <div className="text-sm mt-2">
         <a
           href="https://github.com/studiokaiji/chronostr"

@@ -1,4 +1,5 @@
 import { useAlert } from "@/hooks/use-alert";
+import { useI18n } from "@/hooks/use-i18n";
 import { CopyIcon } from "./icons/copy-icon";
 import { Button } from "./ui/button";
 import { useState } from "react";
@@ -9,6 +10,7 @@ type CopyUrlButton = {
 };
 
 export const CopyUrlButton = ({ url }: CopyUrlButton) => {
+  const { t } = useI18n();
   const { setAlert } = useAlert();
 
   const [copied, setCopied] = useState(false);
@@ -16,16 +18,16 @@ export const CopyUrlButton = ({ url }: CopyUrlButton) => {
   const copy = () => {
     navigator.clipboard.writeText(url).then(() => {
       setAlert({
-        title: "Copied!",
+        title: t.common.copied,
         lifetimeMs: 1500,
       });
       setCopied(true);
 
-      const t = setTimeout(() => {
+      const timer = setTimeout(() => {
         setCopied(false);
       }, 1500);
 
-      return () => clearTimeout(t);
+      return () => clearTimeout(timer);
     });
   };
 

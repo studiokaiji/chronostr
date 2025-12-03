@@ -9,6 +9,7 @@ import { TriangleIcon } from "./icons/triangle-icon";
 import { CloseIcon } from "./icons/close-icon";
 import { Label } from "./ui/label";
 import { ConnectNIP07Button } from "./connect-nip07-button";
+import { useI18n } from "@/hooks/use-i18n";
 import { useNDK } from "@/hooks/use-ndk";
 import { rsvpEvent } from "@/services/event-calender";
 import { type NDKEvent } from "@nostr-dev-kit/ndk";
@@ -35,6 +36,7 @@ export const JoinTheEvent = memo(
     onRSVPError,
     name: inputName,
   }: JoinTheEventProps) => {
+    const { t } = useI18n();
     const [name, setName] = useState<string>(inputName || "");
 
     const [rsvpStatuses, setRSVPStatuses] = useState<RSVPStatus[]>(
@@ -68,18 +70,14 @@ export const JoinTheEvent = memo(
     if (displayAuthConfirm) {
       return (
         <div className="flex flex-col items-center justify-center text-center space-y-4">
-          <p className="font-semibold text-lg">Connect to Nostr Account?</p>
-          <p className="text-gray-500">
-            If you connect your Nostr account, your profile will be
-            automatically filled in, and you will be able to make changes to
-            your schedule and contact members from other browsers as well.
-          </p>
+          <p className="font-semibold text-lg">{t.joinEvent.connectToNostr}</p>
+          <p className="text-gray-500">{t.joinEvent.connectDescription}</p>
           <div className="flex items-center space-x-2">
             <Button
               variant="secondary"
               onClick={() => setDisplayAuthConfirm(false)}
             >
-              No Thanks
+              {t.common.noThanks}
             </Button>
             <ConnectNIP07Button
               onConnect={() => setDisplayAuthConfirm(false)}
@@ -134,7 +132,7 @@ export const JoinTheEvent = memo(
         <p className="font-semibold">{eventCalender.title}</p>
         {!ndk?.signer && (
           <TextField
-            label="📛 Name"
+            label={`📛 ${t.joinEvent.name}`}
             required
             name={name}
             onChange={(e) => setName(e.target.value)}
@@ -143,7 +141,7 @@ export const JoinTheEvent = memo(
         <div>
           <Label>
             <span className="text-red-500">* </span>
-            🗓️ Candidate dates
+            🗓️ {t.joinEvent.candidateDates}
           </Label>
           <div className="space-y-3 mt-1.5">
             {eventCalender.dates.map((date, i) => {
@@ -209,7 +207,7 @@ export const JoinTheEvent = memo(
           </div>
         </div>
         <Button className="w-full space-x-1 flex items-center" type="submit">
-          {isLoading && <Spinner />} <span>Submit</span>
+          {isLoading && <Spinner />} <span>{t.common.submit}</span>
         </Button>
       </form>
     );
@@ -219,6 +217,7 @@ export const JoinTheEvent = memo(
 export const JoinTheEventDialog = (
   props: JoinTheEventProps & { isLoading?: boolean }
 ) => {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   return (
@@ -228,9 +227,9 @@ export const JoinTheEventDialog = (
           {props.isLoading ? (
             <Spinner />
           ) : props.beforeRSVP ? (
-            "📝 Re Schedule"
+            `📝 ${t.joinEvent.reSchedule}`
           ) : (
-            "✋ Join"
+            `✋ ${t.joinEvent.join}`
           )}
         </Button>
       </DialogTrigger>

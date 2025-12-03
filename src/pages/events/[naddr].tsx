@@ -1,6 +1,7 @@
 import { Layout } from "@/components/layout";
 import { Card } from "@/components/ui/card";
 import { useAlert } from "@/hooks/use-alert";
+import { useI18n } from "@/hooks/use-i18n";
 import { getEventCalendar, getRSVP } from "@/services/event-calender";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -20,6 +21,7 @@ export const EventCalendarPage = () => {
     throw Error();
   }
 
+  const { t } = useI18n();
   const { setAlert } = useAlert();
 
   const { ndk, assignPrivateKey, signerType } = useNDK();
@@ -59,7 +61,7 @@ export const EventCalendarPage = () => {
         return rsvp;
       } catch (e) {
         setAlert({
-          title: "RSVP Fetch Error",
+          title: t.event.rsvpFetchError,
           description: String(e),
         });
         throw e;
@@ -89,15 +91,15 @@ export const EventCalendarPage = () => {
 
     assignPrivateKey(privKey).catch((e) => {
       setAlert({
-        title: "Account Error",
+        title: t.event.accountError,
         description: e,
       });
     });
-  }, [assignPrivateKey, calendar, ndk?.activeUser, setAlert]);
+  }, [assignPrivateKey, calendar, ndk?.activeUser, setAlert, t]);
 
   const submitErrorHandler = (e: unknown) => {
     setAlert({
-      title: "Failed to Submit.",
+      title: t.event.failedToSubmit,
       description: String(e),
       variant: "destructive",
     });
@@ -110,7 +112,7 @@ export const EventCalendarPage = () => {
   return (
     <Layout>
       <Helmet>
-        <title>{calendar.title} | chronostr</title>
+        <title>{calendar.title} | {t.common.chronostr}</title>
       </Helmet>
       <div className="space-y-4">
         {rsvp && !isRSVPLoading && (

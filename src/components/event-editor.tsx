@@ -6,6 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { enUS, ja } from "date-fns/locale";
 import { Calendar } from "./ui/calendar";
 import { TextField } from "./ui/text-field";
 import { TextareaWithLabel } from "./ui/textarea-with-label";
@@ -14,6 +15,7 @@ import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Textarea } from "./ui/textarea";
 import { useAlert } from "@/hooks/use-alert";
+import { useI18n } from "@/hooks/use-i18n";
 import { Spinner } from "./ui/spinner";
 import {
   createEventCalendar,
@@ -63,6 +65,8 @@ export const EventEditor = memo(
     onEditComplete: onSaved,
     onEditError: onFailed,
   }: EventEditorProps) => {
+    const { t, locale } = useI18n();
+    const calendarLocale = locale === "ja" ? ja : enUS;
     const [title, setTitle] = useState(currentValue?.title || "");
     const [description, setDescription] = useState(
       currentValue?.description || ""
@@ -131,8 +135,8 @@ export const EventEditor = memo(
             const parsed = safeParseISO8601String(strDate);
             if (!parsed) {
               setAlert({
-                title: "An invalid date was found.",
-                description: `"${strDate}" is not in accordance with ISO8601.`,
+                title: t.eventEditor.invalidDate,
+                description: t.eventEditor.invalidDateDescription(strDate),
                 variant: "destructive",
               });
               setIsCreating(false);
@@ -174,13 +178,13 @@ export const EventEditor = memo(
         onSaved?.(calendarId);
 
         setAlert({
-          title: "Success!",
+          title: t.common.success,
           variant: "default",
         });
       } catch (e) {
         onFailed?.(e);
         setAlert({
-          title: "Error",
+          title: t.common.error,
           description: String(e),
           variant: "destructive",
         });
@@ -192,23 +196,23 @@ export const EventEditor = memo(
     return (
       <form className="space-y-4 w-full" onSubmit={submit}>
         <TextField
-          label="🎉 Event title"
-          placeholder="Ostrich sashimi party"
+          label={`🎉 ${t.eventEditor.eventTitle}`}
+          placeholder={t.eventEditor.eventTitlePlaceholder}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
         />
         <TextareaWithLabel
-          label="📕 Description"
-          placeholder="Let's all go eat some delicious ostrich!"
+          label={`📕 ${t.eventEditor.description}`}
+          placeholder={t.eventEditor.descriptionPlaceholder}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
 
         <div>
           <Label>
-            {!initialDates && <span className="text-red-500">* </span>}📅
-            Candidate dates
+            {!initialDates && <span className="text-red-500">* </span>}📅{" "}
+            {t.eventEditor.candidateDates}
           </Label>
           {
             // Update時のみ表示
@@ -217,7 +221,7 @@ export const EventEditor = memo(
               <>
                 <div className="mt-1">
                   <Label className="text-gray-500 block">
-                    Current candidate dates
+                    {t.eventEditor.currentCandidateDates}
                   </Label>
                   <div className="space-y-1 max-w-72 mt-1">
                     {currentDates.map((date) => (
@@ -247,7 +251,9 @@ export const EventEditor = memo(
 
           {currentValue && currentDates.length > 0 && (
             <Label className="text-gray-500 block mt-1.5">
-              {initialDates ? "New candidate dates" : "Candidate dates"}
+              {initialDates
+                ? t.eventEditor.newCandidateDates
+                : t.eventEditor.candidateDates}
             </Label>
           )}
           <div className="border rounded-md flex flex-col-reverse items-center sm:items-stretch sm:flex-row h-[inherit] mt-1.5">
@@ -255,6 +261,7 @@ export const EventEditor = memo(
               mode="single"
               fromDate={new Date()}
               onSelect={selectDate}
+              locale={calendarLocale}
               modifiersClassNames={{
                 today: "bg-none",
               }}
@@ -269,15 +276,7 @@ export const EventEditor = memo(
             />
             <Textarea
               className="w-full h-[inherit] min-h-[204px] resize-none border-none outline-none focus-visible:ring-offset-0 focus-visible:ring-0 p-3"
-              placeholder={`Enter candidate dates / times for events. 
-Candidates are separated by line breaks.
-
-Examples:
-2023-12-13
-2023-12-13T16:00
-
-You can also enter the date from the calendar.
-`}
+              placeholder={t.eventEditor.candidateDatesPlaceholder}
               value={dateString}
               onChange={(e) => setDateString(e.target.value)}
               required={!initialDates}
@@ -290,15 +289,11 @@ You can also enter the date from the calendar.
           disabled={isCreating}
         >
           {isCreating && <Spinner />}{" "}
-          <span>{currentValue ? "Save" : "Create"}</span>
+          <span>{currentValue ? t.common.save : t.common.create}</span>
         </Button>
         <div className="text-gray-500 mt-2 text-sm">
-          <p>1. Creating an event requires signing with NIP-07.</p>
-          <p>
-            2. A signature is not required to participate in the event, but if
-            you do not sign, you will only be able to edit the content from the
-            same PC / Smartphone and browser.
-          </p>
+          <p>{t.eventEditor.note1}</p>
+          <p>{t.eventEditor.note2}</p>
         </div>
       </form>
     );
@@ -320,6 +315,7 @@ const safeParseISO8601String = (strDate: string) => {
 export const EventEditorDialog = (
   props: EventEditorProps & { isLoading?: boolean }
 ) => {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const close = useCallback(() => {
     setIsOpen(false);
@@ -328,12 +324,14 @@ export const EventEditorDialog = (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="secondary" disabled={props.isLoading}>
-          {props.isLoading ? <Spinner /> : "🖊️ Edit"}
+          {props.isLoading ? <Spinner /> : `🖊️ ${t.common.edit}`}
         </Button>
       </DialogTrigger>
       <DialogContent className="overflow-y-scroll max-h-screen md:max-w-screen-sm md:w-full">
         <DialogHeader>
-          <DialogTitle className="text-3xl">Edit Event</DialogTitle>
+          <DialogTitle className="text-3xl">
+            {t.eventEditor.editEvent}
+          </DialogTitle>
         </DialogHeader>
         <EventEditor
           {...props}
