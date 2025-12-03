@@ -16,15 +16,15 @@ export const User = ({ user, type = "onlyIcon" }: UserProps) => {
   const { ndk } = useNDK();
 
   const { data } = useQuery({
-    queryKey: [user],
-    queryFn: async ({ queryKey }) => {
-      const [user] = queryKey;
+    queryKey: ["user-profile", user.pubkey],
+    queryFn: async () => {
       if (!ndk) {
-        return;
+        throw new Error("NDK is not initialized");
       }
       const profile = await getUserProfile(ndk, user);
       return profile;
     },
+    enabled: !!ndk,
   });
 
   const imageClass = type === "info" ? infoImageClass : onlyIconImageClass;
